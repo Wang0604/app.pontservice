@@ -1,10 +1,19 @@
+# Pontai 工具矩阵 - 技术架构文档（v3.0 备份）
+
+> ⚠️ **这是 README v3.0 的初稿备份，不是当前生效版本。**
+>
+> **备份时间**: 2026-04-24
+> **备份原因**: v3.0 → v3.1 调整支付流程表述（pricing → 合同 → 打款三步闭环，微信/支付宝后置到 Stage 2），保留本备份以便未来回溯
+> **当前生效版本**: [../README.md](../README.md) (v3.1+)
+
+---
+
 # Pontai 工具矩阵 - 技术架构文档
 
-> **版本**: 3.1 (Railway + Cloudflare Stage 0，收款流程三步闭环版)
+> **版本**: 3.0 (Railway + Cloudflare Stage 0 海外优先版)
 > **日期**: 2026-04-24
 > **状态**: 当前生效，是 v1.1 前 CTO 方案的延续 + ADR-002 Stage 0 调整
-> **决策依据**: [ADR-002](docs/adr-002-global-first-mvp.md)
-> **上一版备份**: [docs/README-v3.0-backup.md](docs/README-v3.0-backup.md)
+> **决策依据**: [ADR-002](adr-002-global-first-mvp.md)
 
 ---
 
@@ -52,7 +61,7 @@ v1.1 在工具选型上的判断依然成立:
 - 异步任务需要重试/退避/定时 → Inngest（step functions / cron）
 - 全球 CDN + DNS + WAF 统一管理 → Cloudflare 前置层
 - 邮件送达率 + DX → Resend
-- 监控延后 → 需要再接入（Stage 0 只留 Railway Logs）
+- 监控不要自建 → Sentry + PostHog
 
 ### 1.3 v3.0 相对于 v1.1 的唯一改动
 
@@ -122,10 +131,10 @@ v1.1 在工具选型上的判断依然成立:
         ┌────────────────────────┼──────────────────────────────┐
         ▼                        ▼                              ▼
 ┌──────────────────┐  ┌──────────────────────┐  ┌──────────────────────┐
-│  Resend          │  │  Railway Logs        │  │  Stripe (Stage 1)    │
-│  • 事务邮件       │  │  • 运行日志           │  │  • 海外信用卡支付      │
-│  • 营销邮件       │  │  • 7 天保留          │  │  • 订阅管理           │
-│  • 发票 PDF 附件  │  │                      │  │  • 自动发票           │
+│  Resend          │  │  Sentry + PostHog    │  │  Stripe (Stage 1)    │
+│  • 事务邮件       │  │  • 错误监控           │  │  • 海外信用卡支付      │
+│  • 营销邮件       │  │  • 产品分析埋点        │  │  • 订阅管理           │
+│  • 发票 PDF 附件  │  │  • Session Replay    │  │  • 自动发票           │
 └──────────────────┘  └──────────────────────┘  └──────────────────────┘
 ```
 
@@ -158,7 +167,7 @@ v1.1 在工具选型上的判断依然成立:
 | 维度 | 选型 | 说明 |
 |------|------|------|
 | 认证核心 | **Better Auth** | v1.1 Lucia 的继任者 |
-| 登录方式 | 邮箱 OTP | Better Auth emailOTP 插件 |
+| 登录方式 | 邮箱 OTP (主) + Google OAuth | 海外友好 |
 | 短信通道 | Stage 0 不用（没短信需求） | Stage 2 加阿里云短信（国内用户） |
 | Session | Cookie-based（HttpOnly + Secure）| Better Auth 默认 |
 
@@ -180,57 +189,24 @@ v1.1 在工具选型上的判断依然成立:
 | 网页抓取 | **Browserless (Stage 0) / 自建 Puppeteer (Stage 1)** | Stage 1 再上独立 service |
 | Provider 抽象 | 自写薄抽象层 | v1.1 继承 |
 
-### 3.6 收款与通知
+### 3.6 支付与通知
 
-#### Stage 0 收款流程（当前，三步闭环）
-
-```
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│  1. 定价展示   │  →   │  2. 建立合同   │  →   │  3. 对公打款   │
-│    pricing    │      │   contract   │      │   payment    │
-└──────────────┘      └──────────────┘      └──────────────┘
-       │                     │                      │
-       ▼                     ▼                      ▼
- /pricing 页面        e签宝电子合同         对公银行账户
- /pricing/apply      3 份模板：999/2999   小规模 3% 普票
- → leads 表          /36000（早鸟价）     Admin 手动激活
-```
-
-**Stage 0 明确不做**: 微信支付 / 支付宝 / Stripe / 任何 webhook 自动激活。
-
-| 维度 | Stage 0 选型 | 说明 |
-|------|------------|------|
-| 1. 定价展示 | `/pricing` + `/pricing/apply` | 三档套餐 + 早鸟价 + 意向表单 |
-| 2. 合同签署 | **e签宝 / 法大大** | 3 份模板（999 咨询 / 2999 工具包 / 36000 年付） |
-| 3. 收款方式 | **对公银行转账** | 客户财务走对公流程，合规合法 |
-| 发票 | 小规模纳税人 3% 普票 | 人工开票 PDF，Resend 邮件发送 |
-| 激活 | `/admin/activate` 手动 | 对账 → 写 credits → 发激活邮件 |
-| 邮件通道 | **Resend** | v1.1 继承，激活/发票/欢迎 |
-| 短信通道 | Stage 0 不用 | Stage 2 加阿里云短信（国内） |
-
-#### 支付自动化（Stage 1/2 后置）
-
-以下能力明确**后置**，不在 Stage 0 做:
-
-| 阶段 | 新增支付能力 | 触发条件 | 归档详解 |
-|------|------------|---------|---------|
-| **Stage 1** | Stripe（海外信用卡 + 订阅） | 海外客户主动要求，Stage 0 完成 10 单 | [payment-plan.md §3](docs/payment-plan.md) |
-| **Stage 2** | 微信支付 v3 + 支付宝当面付 | 国内客户 > 100/月 或开课规模化 | [payment-plan.md §4](docs/payment-plan.md) + [stage-2-aliyun-blueprint.md §4.5](docs/stage-2-aliyun-blueprint.md) |
-
-**为什么后置**:
-1. B 端 999-36000 元订单客户财务天然走对公，支付链接反而不专业
-2. 微信支付商户号需要 ICP 备案 + 7-15 天审核，阻塞上线
-3. Stripe 需要海外实体账户，Stage 0 前 10 单不值得建
-4. Provider 抽象层已经预留接口，Stage 1/2 加实现不动业务代码
+| 维度 | 选型 | 说明 |
+|------|------|------|
+| 支付（Stage 0）| **对公转账 + 电子合同** | B 端大额订单，详见 [payment-plan.md](docs/payment-plan.md) |
+| 支付（Stage 1）| + Stripe | 海外信用卡自动化 |
+| 支付（Stage 2）| + 微信支付 v3 + 支付宝 | 国内规模化 |
+| 邮件 | **Resend** | v1.1 继承 |
+| 短信 | Stage 0 不用 | Stage 2 加阿里云短信 |
 
 ### 3.7 监控与分析
 
 | 维度 | 选型 | 说明 |
 |------|------|------|
-| 应用日志 | Railway Logs | 保留 7 天 |
-| Uptime | UptimeRobot（免费，可选）| 5 分钟粒度 |
-| 错误监控 | 延后 | Stage 0 不做，遇到真实问题再评估（Sentry / BetterStack / Axiom 任选） |
-| 产品分析 | 延后 | Stage 0 不做，真到需要漏斗分析时再接（PostHog / Plausible 任选） |
+| 错误监控 | **Sentry** | v1.1 继承 |
+| 产品分析 | **PostHog** | v1.1 继承 |
+| 应用日志 | Railway Logs + Sentry | |
+| Uptime | UptimeRobot（免费） | 5 分钟粒度 |
 
 ---
 
@@ -315,51 +291,31 @@ v1.1 的判断:
 - 输错 5 次锁定该 OTP
 - 建议启用 Cloudflare Turnstile 做人机校验
 
-### 4.7 收款流程（Stage 0 对公流程）
+**Google OAuth**（可选，海外友好）:
+- Google Cloud Console 申请 OAuth Client
+- Better Auth 内置 provider
 
-**Stage 0 不涉及任何自动化支付**，整个收款链路是：
+### 4.7 支付回调三层保险（Stage 1 Stripe / Stage 2 微信支付）
 
-```
-[客户查看 /pricing 三档套餐]
-        ↓
-[客户填 /pricing/apply 意向表单]
-        ↓
-[leads 表写入 + Resend 邮件通知 CTO]
-        ↓
-[CTO 微信/邮件跟进 → 发 e签宝合同 + 对公账户信息]
-        ↓
-[客户签合同 + 对公转账]
-        ↓
-[CTO 在 /admin/activate 手动激活账号]
-  - 写 credit_transactions（append-only）
-  - 更新 credit_balances（CHECK: >= 0）
-  - 记录订单号 + 合同编号 + 打款流水号
-        ↓
-[Resend 发激活邮件 + 发票 PDF]
-        ↓
-[客户登录使用，credits 可见]
-```
+**Stage 0 不涉及**（对公转账无 webhook）
 
-**数据表参与**:
-- `leads` — 意向客户
-- `orders` — 订单主表（支持所有支付方式）
-- `credit_transactions` / `credit_balances` — credits 流水与余额
+**Stage 1 Stripe webhook**:
 
-**payment_events 表 Stage 0 建但不用** — 为 Stage 1/2 的 Stripe / 微信 / 支付宝 webhook 预留。
+- **第一层**: Next.js `/api/webhooks/stripe` 接收
+  - `stripe.webhooks.constructEvent()` 验签
+  - 写入 `payment_events` 表（event_id UNIQUE）
+  - 立即返回 200
+- **第二层**: Inngest 异步处理
+  - 监听 `payment_events` INSERT 或直接 trigger event
+  - 执行业务：激活账号、发 credits、发邮件
+  - 幂等：用 event_id 去重
+- **第三层**: 主动查询兜底
+  - 前端支付成功页 30 秒未刷新 → 调 `/api/orders/:id/check-status`
+  - Inngest Cron 每 5 分钟扫 PENDING 超 10 分钟的订单
 
-### 4.8 支付自动化三层保险（Stage 1+ 启用，本章先存档）
+**Stage 2 微信支付/支付宝**: 同构，见 [payment-plan.md](docs/payment-plan.md)
 
-> ⚠️ **Stage 0 本章不实现**。Stage 1 接入 Stripe / Stage 2 接入微信支付和支付宝时启用。
-> 详细设计见 [payment-plan.md §3-4](docs/payment-plan.md)。
-
-核心理念（沿用 v1.1 + v2.0 方案）:
-- **第一层**: API Route 接收 webhook，验签 + 幂等写入 `payment_events`，立即返回 200
-- **第二层**: Inngest function 异步处理业务（激活账号、发 credits、发邮件），用 event_id 去重
-- **第三层**: Inngest Cron 每 5 分钟扫 PENDING 超 10 分钟订单 + 前端支付页主动查单兜底
-
-Stage 2 阿里云部署时，微信支付/支付宝的三层保险按同样模式实现（见 [stage-2-aliyun-blueprint.md §4.5](docs/stage-2-aliyun-blueprint.md)）。
-
-### 4.9 Credits 扣费事务（v1.1 不变）
+### 4.8 Credits 扣费事务（v1.1 不变）
 
 3 张表严格流水模型:
 
@@ -373,7 +329,7 @@ Stage 2 阿里云部署时，微信支付/支付宝的三层保险按同样模�
 3. `transactions` 绝不允许 UPDATE/DELETE（通过 RLS + trigger 强制）
 4. 加 CHECK constraint: `available_credits >= 0`
 
-### 4.10 失败处理与退款（Inngest Step Functions 原生支持）
+### 4.9 失败处理与退款（Inngest Step Functions 原生支持）
 
 ```
 [用户触发工具调用]
@@ -400,7 +356,7 @@ Stage 2 阿里云部署时，微信支付/支付宝的三层保险按同样模�
 
 **Inngest 的优势**: Step Functions 原生幂等（每个 step 自动用 step_id 去重），不用手写状态机。
 
-### 4.11 Puppeteer 部署
+### 4.10 Puppeteer 部署
 
 **Stage 0**: 用 **Browserless.io**（$30/月起），不自建
 - 省去容器维护
@@ -411,15 +367,15 @@ Stage 2 阿里云部署时，微信支付/支付宝的三层保险按同样模�
 - 每 1000 请求或 24h 自动重启
 - web 和 puppeteer-worker 之间走 Railway 内网 DNS
 
-### 4.12 监控与日志
+### 4.11 监控与日志
 
-| 维度 | 工具 | 备注 |
+| 维度 | 工具 | 免费额度 |
 |------|------|---------|
-| 应用日志 | Railway Logs | 保留 7 天，够 Stage 0 查问题 |
-| Uptime | UptimeRobot（可选） | 50 monitors / 5 min，免费 |
-| 错误监控 | 延后接入 | 真出线上事故再选（Sentry / BetterStack 等） |
-| 产品分析 | 延后接入 | 有漏斗分析需求再选 |
-| 告警 | Railway 自带 deploy 失败告警 | 邮件发送 |
+| 错误监控 | **Sentry** | 5k events/月 |
+| 产品分析 | **PostHog** | 1M events/月 |
+| 应用日志 | Railway Logs | 无限（保留 7 天） |
+| Uptime | UptimeRobot | 50 monitors / 5 min |
+| 告警 | Sentry → Slack/邮件 | 免费 |
 
 ---
 
@@ -454,7 +410,7 @@ pontai.com  (国内)   →  阿里云 SAE + AnalyticDB Supabase + OSS（[Stage 2
 | LangChain | 抽象太重，bug 多 |
 | Vector DB | OCR/SEO 不需要 RAG |
 | Kafka / RabbitMQ | Inngest 替代 |
-| Datadog / New Relic / Sentry / PostHog | Stage 0 Railway Logs 够用，延后按需接 |
+| Datadog / New Relic | Sentry + PostHog 够 |
 | 多区域部署（Stage 0/1）| Singapore 一个 region 够，Stage 2 再加上海 |
 | 客户区子域名 | 单域名，邮件 + Magic Link 更好用 |
 | 复杂权限系统 | user/staff/admin 三种角色够 |
@@ -550,7 +506,7 @@ const llmProvider: ILlmProvider =
 
 **今天必做**:
 - [ ] 确认公司主体 + 对公账户
-- [ ] 注册技术账号: Railway / Cloudflare / Resend / Inngest / DeepSeek / Anthropic
+- [ ] 注册技术账号: Railway / Cloudflare / Resend / Inngest / Sentry / PostHog / DeepSeek / Anthropic
 - [ ] GitHub 仓库创建
 - [ ] `pontai.cloud` DNS 托管到 Cloudflare
 
@@ -567,7 +523,7 @@ const llmProvider: ILlmProvider =
 
 ## 十、技术栈一句话总结
 
-> **Next.js + Railway + Cloudflare + PostgreSQL + Drizzle + Better Auth + R2 + Inngest + Resend + DeepSeek/Anthropic，Stage 0 最小集，海外优先，月成本 ~$15，Stage 2 切阿里云时 Provider 层切换实现。监控/分析延后按需接。**
+> **Next.js + Railway + Cloudflare + PostgreSQL + Drizzle + Better Auth + R2 + Inngest + Resend + DeepSeek/Anthropic + Sentry/PostHog，前 CTO v1.1 方案完整继承，Stage 0 海外优先，月成本 ~$25，Stage 2 切阿里云时 Provider 层切换实现。**
 
 ---
 
@@ -578,5 +534,4 @@ const llmProvider: ILlmProvider =
 | 1.0 | 2026-04-23 | 初版（Vercel + Supabase 路线，被 v1.1 否决）|
 | 1.1 | 2026-04-23 | 部署平台从 Vercel 切换为 Railway（前 CTO 决策）|
 | 2.0 | 2026-04-23 | 全盘切换为阿里云 Supabase 全家桶（归档为 Stage 2 蓝图）|
-| 3.0 | 2026-04-24 | 按 ADR-002 回到 v1.1 Railway + Cloudflare + Inngest，叠加 Stage 0 海外优先调整 |
-| **3.1** | **2026-04-24** | **§3.6 强化"pricing → 合同 → 打款"三步闭环；新增 §4.7 Stage 0 对公收款流程 + §4.8 支付自动化后置存档；微信支付/支付宝明确后置到 Stage 2；后续 §4.x 章节重新编号；上一版本备份于 `docs/README-v3.0-backup.md`** |
+| **3.0** | **2026-04-24** | **按 ADR-002 回到 v1.1 Railway + Cloudflare + Inngest，叠加 Stage 0 海外优先调整** |

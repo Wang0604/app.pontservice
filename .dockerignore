@@ -1,0 +1,17 @@
+node_modules
+.next
+.env
+.env.local
+.env.*.local
+.git
+.github
+.gitignore
+.vscode
+.idea
+coverage
+*.log
+README.md
+docs/
+*.md
+!package.json
+!pnpm-lock.yaml
