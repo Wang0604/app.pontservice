@@ -7,8 +7,6 @@ const serverEnvSchema = z.object({
 
   BETTER_AUTH_SECRET: z.string().min(16).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
 
   R2_ENDPOINT: z.string().url().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
@@ -28,10 +26,6 @@ const serverEnvSchema = z.object({
   BAIDU_OCR_API_KEY: z.string().optional(),
   BAIDU_OCR_SECRET_KEY: z.string().optional(),
 
-  SENTRY_AUTH_TOKEN: z.string().optional(),
-  SENTRY_ORG: z.string().optional(),
-  SENTRY_PROJECT: z.string().optional(),
-
   ADMIN_EMAILS: z.string().optional(),
 
   COMPANY_NAME: z.string().optional(),
@@ -50,17 +44,11 @@ const serverEnvSchema = z.object({
 
 const clientEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
-  NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
-  NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
 });
 
 export const serverEnv = serverEnvSchema.parse(process.env);
 export const clientEnv = clientEnvSchema.parse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
-  NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
 });
 
 export const adminEmails = (serverEnv.ADMIN_EMAILS ?? '')

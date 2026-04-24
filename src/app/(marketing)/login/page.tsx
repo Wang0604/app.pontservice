@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { signIn, authClient } from '@/lib/auth/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,11 +55,6 @@ function LoginFlow() {
     }
   }
 
-  async function handleGoogleSignIn() {
-    setLoading(true);
-    await signIn.social({ provider: 'google', callbackURL: redirectTo });
-  }
-
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -87,28 +82,6 @@ function LoginFlow() {
             <Button type="submit" className="w-full" disabled={loading || !email}>
               {loading ? '发送中...' : '发送验证码'}
             </Button>
-            {process.env.NEXT_PUBLIC_APP_URL && (
-              <>
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">或</span>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                >
-                  <Mail className="h-4 w-4" />
-                  用 Google 账号登录
-                </Button>
-              </>
-            )}
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">

@@ -8,7 +8,6 @@ import { generateInvoicePdf, buildInvoiceData } from '@/lib/invoices/generate';
 import { storageProvider } from '@/lib/providers/storage/r2';
 import { emailProvider } from '@/lib/providers/email/resend';
 import { activationEmail } from '@/lib/providers/email/templates';
-import { trackServer } from '@/lib/analytics/posthog-server';
 
 export async function activateOrder(params: {
   orderId: string;
@@ -118,13 +117,6 @@ export async function activateOrder(params: {
   } catch (err) {
     console.error('[activate] activation email failed', err);
   }
-
-  await trackServer('order_activated', lead.email, {
-    orderNumber: order.orderNumber,
-    plan: order.planType,
-    amountCny: parseFloat(order.actualAmountCny),
-    earlyBird: order.earlyBird,
-  }).catch(() => {});
 
   return { ok: true, userId, creditsGranted: plan.credits, invoiceKey };
 }

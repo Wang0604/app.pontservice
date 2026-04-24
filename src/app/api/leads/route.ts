@@ -7,7 +7,6 @@ import { getPlan } from '@/lib/pricing';
 import { emailProvider } from '@/lib/providers/email/resend';
 import { leadNotificationEmail } from '@/lib/providers/email/templates';
 import { generateOrderNumber } from '@/lib/utils';
-import { trackServer } from '@/lib/analytics/posthog-server';
 
 const schema = z.object({
   companyName: z.string().min(2),
@@ -97,12 +96,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[leads] admin notification email failed', err);
   }
-
-  await trackServer('lead_created', leadRow.email, {
-    plan: data.interestedPlan,
-    source: data.source ?? 'website',
-    hasSession: !!session,
-  }).catch(() => {});
 
   return NextResponse.json({
     ok: true,

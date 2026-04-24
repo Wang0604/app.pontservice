@@ -10,8 +10,12 @@ node_modules
 .idea
 coverage
 *.log
-README.md
+
 docs/
 *.md
+
 !package.json
 !pnpm-lock.yaml
+
+!prompts/**/*.md
+!src/**/*.md

@@ -27,7 +27,6 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.2",
     "@react-pdf/renderer": "^4.0.0",
-    "@sentry/nextjs": "^8.34.0",
     "better-auth": "^1.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -37,8 +36,6 @@
     "lucide-react": "^0.451.0",
     "next": "^14.2.15",
     "postgres": "^3.4.4",
-    "posthog-js": "^1.174.1",
-    "posthog-node": "^4.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.1",
@@ -64,5 +61,6 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  }
+  },
+  "packageManager": "pnpm@9.15.4"
 }

@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders, paymentReceipts, files, leads } from '@/lib/db/schema';
 import { requireUser } from '@/lib/auth/helpers';
-import { trackServer } from '@/lib/analytics/posthog-server';
 
 const schema = z.object({
   bankReference: z.string().max(200).optional(),
@@ -66,12 +65,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     return receipt;
   });
-
-  await trackServer('payment_submitted', session.user.email, {
-    orderId,
-    amountCny: body.data.amountCny,
-    hasAttachment: !!fileId,
-  }).catch(() => {});
 
   return NextResponse.json({ ok: true, receipt: result });
 }
