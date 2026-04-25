@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { authClient } from '@/lib/auth/client';
 import { normalizeCnPhoneNumber, formatCnPhoneForDisplay } from '@/lib/auth/phone';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -348,8 +349,8 @@ function RegisterFlow() {
 export default function RegisterPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
-      <Link href="/" className="mb-8 text-xl font-semibold">
-        Pontai
+      <Link href="/" className="mb-8 transition-opacity hover:opacity-85" aria-label="Pontai 首页">
+        <BrandLogo imageClassName="h-11" />
       </Link>
       <Suspense
         fallback={
