@@ -8,15 +8,12 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
     instrumentationHook: true,
-    // 让 Next.js 不去打包这些原生 / WASM 依赖，运行时直接从 node_modules require
-    serverComponentsExternalPackages: ['@electric-sql/pglite', 'postgres'],
+    // 让 Next.js 不去打包 postgres 原生依赖，运行时直接从 node_modules require
+    serverComponentsExternalPackages: ['postgres'],
   },
   webpack: (config, { isServer, nextRuntime }) => {
     if (isServer && nextRuntime === 'nodejs') {
-      config.externals = [
-        ...(config.externals || []),
-        '@electric-sql/pglite',
-      ];
+      config.externals = [...(config.externals || [])];
     }
     // Edge runtime 没法用 node 内置模块。我们的 instrumentation 在
     // process.env.NEXT_RUNTIME !== 'nodejs' 时 return，所以 edge 端的引用其实
@@ -36,7 +33,6 @@ const nextConfig = {
         perf_hooks: false,
         events: false,
         zlib: false,
-        '@electric-sql/pglite': false,
         postgres: false,
       };
     }

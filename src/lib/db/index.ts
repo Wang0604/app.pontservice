@@ -3,7 +3,7 @@ import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
 import postgres from 'postgres';
 import * as schema from './schema';
 
-type Db = ReturnType<typeof createDbPostgres> | ReturnType<typeof createDbPglite>;
+type Db = ReturnType<typeof createDbPostgres>;
 
 const globalForDb = globalThis as unknown as {
   db: Db | undefined;
@@ -52,7 +52,13 @@ function createDbPostgres() {
 function createDbPglite() {
   // Use a require so the postgres-only build (e.g., production) doesn't have to
   // ship the PGlite WASM blob. In dev / pglite mode, this is fine.
-  const { PGlite } = require('@electric-sql/pglite') as typeof import('@electric-sql/pglite');
+  const runtimeRequire = eval('require') as NodeRequire;
+  const { PGlite } = runtimeRequire('@electric-sql/pglite') as {
+    PGlite: new (dataDir?: string) => {
+      exec: (sql: string) => Promise<unknown>;
+      query: (sql: string) => Promise<unknown>;
+    };
+  };
 
   const url = process.env.DATABASE_URL?.trim() ?? '';
   // Accept formats:
@@ -74,7 +80,12 @@ function createDbPglite() {
   // eslint-disable-next-line no-console
   console.log(`[db] using PGlite (${dataDir ?? 'memory'})`);
 
-  return drizzlePglite(client, {
+  const drizzle = drizzlePglite as unknown as (
+    client: unknown,
+    config: { schema: typeof schema; logger: boolean },
+  ) => Db;
+
+  return drizzle(client, {
     schema,
     logger: process.env.NODE_ENV === 'development',
   });
