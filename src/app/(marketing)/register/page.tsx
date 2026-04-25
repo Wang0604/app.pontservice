@@ -350,7 +350,7 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <Link href="/" className="mb-8 transition-opacity hover:opacity-85" aria-label="Pontai 首页">
-        <BrandLogo imageClassName="h-11" />
+        <BrandLogo size="lg" className="text-primary" />
       </Link>
       <Suspense
         fallback={
