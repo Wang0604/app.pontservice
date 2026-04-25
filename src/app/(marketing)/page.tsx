@@ -1,23 +1,42 @@
 import Link from 'next/link';
-import { ArrowRight, ClipboardCheck, FileText, Sparkles, ShieldCheck } from 'lucide-react';
+import {
+  ArrowRight,
+  ClipboardCheck,
+  FileText,
+  ReceiptText,
+  Sparkles,
+  ShieldCheck,
+} from 'lucide-react';
 
 const trustSignals = ['对公合同', '正规发票', '数据归属客户', '人工审核交付'];
 
 const plans = [
   {
+    step: '01',
     price: '999',
     title: '诊断',
-    description: '先判断问题值不值得用 AI 做。',
+    subtitle: '先支付诊断费',
+    description: '60 分钟远程诊断，输出可执行报告，判断哪条 AI 路径最值得做。',
+    href: '/pricing/apply?plan=999',
+    cta: '预约诊断',
   },
   {
+    step: '03A',
     price: '2999',
     title: '工具包',
-    description: 'OCR 先跑起来，按月发放 credits。',
+    subtitle: '固定化业务 / 工具订阅',
+    description: '适合已经明确要用 OCR、SEO / GEO 工具的客户，按月发放 credits。',
+    href: '/pricing/apply?plan=2999',
+    cta: '申请工具包',
   },
   {
+    step: '03B',
     price: '9999',
     title: '增长陪跑',
-    description: '工具、诊断、Prompt 和流程一起落地。',
+    subtitle: '陪跑落地 / 流程优化',
+    description: '适合需要人一起拆流程、调 Prompt、做月度复盘的客户。',
+    href: '/pricing/apply?plan=9999',
+    cta: '申请陪跑',
   },
 ];
 
@@ -29,13 +48,13 @@ const steps = [
   },
   {
     label: '02',
-    title: '接入工具',
-    description: '从 OCR 发票识别开始，按 credits 计费，结果可追踪。',
+    title: '抵扣升级',
+    description: '诊断后继续购买工具包或陪跑服务，已支付的 999 元可抵扣首期费用。',
   },
   {
     label: '03',
-    title: '陪跑落地',
-    description: '需要时加入月度诊断、Prompt 优化和流程复盘。',
+    title: '选择路径',
+    description: '根据诊断结果选择固定化业务、购买工具包，或进入增长陪跑。',
   },
 ];
 
@@ -90,35 +109,51 @@ export default function HomePage() {
             <div className="relative rounded-[1.75rem] border bg-card/95 p-5 shadow-2xl shadow-slate-900/10 md:p-6">
               <div className="flex items-center justify-between border-b pb-4">
                 <div>
-                  <p className="text-sm font-semibold text-primary">Pontai 交付路径</p>
-                  <p className="mt-1 text-xs text-muted-foreground">诊断、工具、订单状态统一管理</p>
+                  <p className="text-sm font-black uppercase tracking-[0.18em] text-primary">
+                    PONT-AI 交付路径
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    先诊断，再抵扣升级，最后按结果选择工具或陪跑
+                  </p>
                 </div>
                 <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-                  Stage 0
+                  Diagnosis first
                 </span>
               </div>
 
               <div className="mt-5 grid gap-3">
-                {plans.map((plan) => (
-                  <div key={plan.price} className="rounded-2xl border bg-background/80 p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-muted-foreground">¥{plan.price}</p>
-                        <h2 className="mt-1 text-lg font-bold tracking-tight">{plan.title}</h2>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                          {plan.description}
-                        </p>
-                      </div>
-                      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                <PathCard plan={plans[0]} featured />
+
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <ReceiptText className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+                        02 抵扣规则
+                      </p>
+                      <h2 className="mt-1 text-lg font-extrabold">999 诊断费可抵扣后续升级</h2>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        购买 2999 工具包或 9999 增长陪跑时，已支付的 999 元可抵扣首期服务费。
+                      </p>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <PathCard plan={plans[1]} compact />
+                  <PathCard plan={plans[2]} compact />
+                </div>
               </div>
 
-              <div className="mt-5 rounded-2xl bg-primary p-5 text-primary-foreground">
+              <Link
+                href="/tools/ocr-invoice"
+                className="group mt-5 block rounded-2xl bg-primary p-5 text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm opacity-80">当前可用工具</p>
+                    <p className="text-sm font-semibold opacity-80">当前可用工具</p>
                     <p className="mt-2 text-2xl font-bold tracking-tight">OCR 发票识别</p>
                   </div>
                   <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
@@ -128,7 +163,10 @@ export default function HomePage() {
                 <p className="mt-3 text-sm leading-6 opacity-80">
                   先把一件高频、低风险的工作跑通，再扩展到 SEO / GEO 诊断。
                 </p>
-              </div>
+                <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
+                  打开工具 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                </span>
+              </Link>
             </div>
           </div>
         </div>
@@ -138,24 +176,30 @@ export default function HomePage() {
         <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-              How it works
+              PONT-AI workflow
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight">
-              不是卖一个聊天机器人，而是交付一个能报销、能复盘的 AI 工作流
+              不是直接卖工具，而是先用诊断把购买路径定下来
             </h2>
             <p className="mt-4 leading-7 text-muted-foreground">
-              每一步都保留清晰的业务边界：先诊断，再接工具，需要时由人陪跑，避免客户一上来就买一套用不起来的系统。
+              客户先用 999 诊断降低决策风险；诊断后如果继续购买 2999 工具包或 9999
+              增长陪跑，诊断费进入抵扣逻辑，避免重复付费。
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            {steps.map((step) => (
+            {steps.map((step, index) => (
               <div key={step.label} className="rounded-2xl border bg-card p-5 shadow-sm">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {step.label}
                 </span>
                 <h3 className="mt-5 text-lg font-semibold tracking-tight">{step.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>
+                {index === 1 && (
+                  <div className="mt-4 rounded-xl bg-accent px-3 py-2 text-xs font-semibold text-accent-foreground">
+                    诊断费可抵扣后续工具包或陪跑服务
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -187,6 +231,44 @@ export default function HomePage() {
         </div>
       </section>
     </>
+  );
+}
+
+function PathCard({
+  plan,
+  featured = false,
+  compact = false,
+}: {
+  plan: (typeof plans)[number];
+  featured?: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <Link
+      href={plan.href}
+      className={
+        featured
+          ? 'group block rounded-2xl border-2 border-primary bg-background p-4 transition hover:-translate-y-0.5 hover:shadow-lg'
+          : 'group block rounded-2xl border bg-background/80 p-4 transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md'
+      }
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            {plan.step} / ¥{plan.price}
+          </p>
+          <h2 className={compact ? 'mt-2 text-lg font-extrabold' : 'mt-2 text-xl font-extrabold'}>
+            {plan.title}
+          </h2>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground">{plan.subtitle}</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.description}</p>
+        </div>
+        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
+      </div>
+      <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+        {plan.cta}
+      </span>
+    </Link>
   );
 }
 

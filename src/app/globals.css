@@ -4,8 +4,9 @@
 
 @layer base {
   :root {
-    --font-sans: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
-      ui-sans-serif, system-ui, sans-serif;
+    --font-sans:
+      'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
+      system-ui, sans-serif;
 
     --background: 220 33% 97%;
     --foreground: 225 45% 10%;
@@ -67,7 +68,16 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+    letter-spacing: -0.012em;
     text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.04em;
   }
 }

@@ -5,7 +5,7 @@ import { formatYuan } from '@/lib/utils';
 
 export const metadata = {
   title: '定价',
-  description: 'Pontai 三档套餐：999 诊断 / 2999 工具包 / 9999 增长包',
+  description: 'PONT-AI 三档套餐：999 诊断 / 2999 工具包 / 9999 增长包',
 };
 
 export default function PricingPage() {
@@ -14,8 +14,8 @@ export default function PricingPage() {
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-4xl font-bold">从诊断到落地的三档服务</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          先把问题看清楚，再用工具跑起来。所有套餐都走对公合同、正规发票，
-          企业财务报销无阻。
+          先支付 999 做诊断，把问题看清楚；后续升级 2999 工具包或 9999 增长陪跑时，999
+          诊断费可抵扣首期服务费。
         </p>
       </div>
 
@@ -43,9 +43,7 @@ export default function PricingPage() {
               <div className="mt-6">
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-bold">{formatYuan(plan.priceCny)}</span>
-                  {isMonthly && (
-                    <span className="text-sm text-muted-foreground">/ 月</span>
-                  )}
+                  {isMonthly && <span className="text-sm text-muted-foreground">/ 月</span>}
                 </div>
                 {isMonthly && (
                   <div className="mt-1 text-sm text-muted-foreground">
@@ -85,6 +83,7 @@ export default function PricingPage() {
         <h3 className="font-semibold">这三档怎么选？</h3>
         <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
           <li>• 还不确定问题值不值得做，先选 999 诊断</li>
+          <li>• 诊断后 30 天内升级 2999 或 9999，已支付的 999 元可抵扣首期费用</li>
           <li>• 已经确定要用 OCR 和后续 SEO / GEO 工具，选 2999 工具包（月付）</li>
           <li>• 希望有人帮你把工具、Prompt 和业务流程一起跑通，选 9999 增长包（月付）</li>
           <li>• 月付订阅可随时停用，按月发票；999 诊断为一次性服务</li>
