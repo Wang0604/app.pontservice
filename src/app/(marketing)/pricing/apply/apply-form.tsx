@@ -5,22 +5,35 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Check, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PLANS, PLAN_IDS, type PlanId } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
+
+const PAIN_POINTS = [
+  { id: 'invoice', label: '发票、合同、表格人工录入很多' },
+  { id: 'support', label: '客服 / 销售有大量重复问答' },
+  { id: 'unclear', label: '想用 AI 但不知道从哪里开始' },
+  { id: 'content', label: '官网、公众号、SEO 长期不更新' },
+  { id: 'geo', label: '客户在 AI 平台里搜不到我们' },
+  { id: 'tools', label: '已经在用某些 AI 工具，但没融入流程' },
+  { id: 'rivals', label: '同行已经在用 AI，担心被甩开' },
+  { id: 'workflow', label: '业务流程长，需要人工串联多个系统' },
+];
+
+const PAIN_POINT_LABEL = new Map(PAIN_POINTS.map((p) => [p.id, p.label]));
 
 const applySchema = z.object({
+  painPoints: z.array(z.string()).min(1, '至少选一个'),
+  goal: z.string().min(8, '说说想解决什么具体问题（至少 8 个字）').max(500),
+  interestedPlan: z.enum(PLAN_IDS),
   companyName: z.string().min(2, '公司名至少 2 个字'),
   contactName: z.string().min(1, '必填'),
   email: z.string().email('邮箱格式不对'),
   phone: z.string().optional(),
-  interestedPlan: z.enum(PLAN_IDS),
-  useCase: z.string().optional(),
   notes: z.string().optional(),
-  source: z.string().optional(),
 });
 
 type ApplyInput = z.infer<typeof applySchema>;
@@ -32,31 +45,13 @@ interface Prefill {
   phone?: string;
 }
 
-const STEPS = [
-  {
-    id: 'plan',
-    title: '选择套餐',
-    fields: ['interestedPlan'],
-  },
-  {
-    id: 'info',
-    title: '联系信息',
-    fields: ['companyName', 'contactName', 'email', 'phone'],
-  },
-  {
-    id: 'details',
-    title: '需求详情',
-    fields: ['useCase', 'notes'],
-  },
+const STEPS: { id: string; title: string; fields: (keyof ApplyInput)[] }[] = [
+  { id: 'diagnose', title: '业务自检', fields: ['painPoints', 'goal'] },
+  { id: 'plan', title: '选择服务', fields: ['interestedPlan'] },
+  { id: 'contact', title: '联系方式', fields: ['companyName', 'contactName', 'email', 'phone'] },
 ];
 
-export function ApplyForm({
-  defaultPlan,
-  prefill,
-}: {
-  defaultPlan: PlanId;
-  prefill?: Prefill;
-}) {
+export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefill?: Prefill }) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -67,42 +62,65 @@ export function ApplyForm({
     trigger,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ApplyInput>({
     resolver: zodResolver(applySchema),
     defaultValues: {
+      painPoints: [],
+      goal: '',
       interestedPlan: defaultPlan,
       email: prefill?.email ?? '',
       contactName: prefill?.name ?? '',
       companyName: prefill?.companyName ?? '',
       phone: prefill?.phone ?? '',
+      notes: '',
     },
   });
 
   const selectedPlan = watch('interestedPlan');
+  const painPoints = watch('painPoints') ?? [];
+
+  function togglePainPoint(id: string) {
+    const next = painPoints.includes(id) ? painPoints.filter((p) => p !== id) : [...painPoints, id];
+    setValue('painPoints', next, { shouldValidate: true });
+  }
 
   async function handleNext() {
-    const fields = STEPS[currentStep].fields as (keyof ApplyInput)[];
-    const isValid = await trigger(fields);
-    if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
-    }
+    const fields = STEPS[currentStep].fields;
+    const ok = await trigger(fields);
+    if (ok) setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
   function handlePrev() {
-    setCurrentStep((prev) => Math.max(prev - 1, 0));
+    setCurrentStep((s) => Math.max(s - 1, 0));
   }
 
   async function onSubmit(data: ApplyInput) {
     if (currentStep !== STEPS.length - 1) return;
-    
     setError(null);
     setSubmitting(true);
     try {
+      const useCase = [
+        '【自检勾选】',
+        ...data.painPoints.map((id) => `- ${PAIN_POINT_LABEL.get(id) ?? id}`),
+        '',
+        '【最想解决的问题】',
+        data.goal,
+      ].join('\n');
+
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          companyName: data.companyName,
+          contactName: data.contactName,
+          email: data.email,
+          phone: data.phone,
+          interestedPlan: data.interestedPlan,
+          useCase,
+          notes: data.notes,
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -118,162 +136,247 @@ export function ApplyForm({
   }
 
   return (
-    <div className="space-y-8 py-4">
-      {/* Progress Indicator */}
-      <div className="relative mb-12 px-6">
-        <div className="absolute left-10 right-10 top-4 -translate-y-1/2 h-0.5 bg-muted"></div>
-        <div
-          className="absolute left-10 top-4 -translate-y-1/2 h-0.5 bg-primary transition-all duration-300 ease-in-out"
-          style={{ width: `calc(${(currentStep / (STEPS.length - 1)) * 100}% - 2.5rem)` }}
-        ></div>
-        <div className="relative flex justify-between">
-          {STEPS.map((step, index) => {
-            const isCompleted = currentStep > index;
-            const isCurrent = currentStep === index;
-            
-            return (
-              <div key={step.id} className="flex flex-col items-center gap-2 relative z-10">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background transition-colors duration-300 ${
-                    isCompleted
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : isCurrent
-                      ? 'border-primary text-primary shadow-sm'
-                      : 'border-muted text-muted-foreground'
-                  }`}
-                >
-                  {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
-                </div>
-                <span
-                  className={`absolute top-10 w-24 text-center text-xs font-medium transition-colors ${
-                    isCurrent || isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                  }`}
-                >
-                  {step.title}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+    <div className="space-y-8">
+      <ol className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]">
+        {STEPS.map((s, i) => {
+          const done = i < currentStep;
+          const active = i === currentStep;
+          return (
+            <li
+              key={s.id}
+              className={
+                active
+                  ? 'flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-white'
+                  : done
+                    ? 'flex items-center gap-2 rounded-full bg-[#00a0e9]/15 px-3 py-1.5 text-[#0a6ea3]'
+                    : 'flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-slate-500'
+              }
+            >
+              <span
+                className={
+                  active
+                    ? 'flex h-5 w-5 items-center justify-center rounded-full bg-white text-slate-900'
+                    : done
+                      ? 'flex h-5 w-5 items-center justify-center rounded-full bg-[#00a0e9] text-white'
+                      : 'flex h-5 w-5 items-center justify-center rounded-full bg-white text-slate-500'
+                }
+              >
+                {done ? <Check className="h-3 w-3" /> : i + 1}
+              </span>
+              <span>{s.title}</span>
+            </li>
+          );
+        })}
+      </ol>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Step 1: Plan */}
-        <div className={currentStep === 0 ? 'block space-y-4 animate-in fade-in slide-in-from-right-4 duration-500' : 'hidden'}>
-          <div className="space-y-4">
-            <Label className="text-base font-medium">您对哪个套餐感兴趣？</Label>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {PLANS.map((plan) => (
-                <label
-                  key={plan.id}
-                  className={`relative flex cursor-pointer flex-col rounded-xl border-2 p-5 shadow-sm transition-all hover:border-primary/50 ${
-                    selectedPlan === plan.id
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                      : 'border-muted bg-background'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    value={plan.id}
-                    {...register('interestedPlan')}
-                    className="sr-only"
-                  />
-                  <div className="font-semibold">{plan.shortLabel}</div>
-                  <div className="mt-2 text-sm text-muted-foreground leading-relaxed">{plan.tagline}</div>
-                  {selectedPlan === plan.id && (
-                    <div className="absolute top-4 right-4 text-primary animate-in zoom-in duration-300">
-                      <CheckCircle2 className="h-5 w-5" />
+        {currentStep === 0 && (
+          <div className="animate-in fade-in slide-in-from-right-4 space-y-7 duration-500">
+            <div className="space-y-3">
+              <Label className="text-base font-bold text-slate-900">
+                你的业务里，下面这些情况存在吗？
+              </Label>
+              <p className="text-sm leading-6 text-slate-500">
+                勾选所有命中的项目，作为 999 诊断会议时的对照清单；至少选一个。
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {PAIN_POINTS.map((p) => {
+                  const checked = painPoints.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => togglePainPoint(p.id)}
+                      className={
+                        checked
+                          ? 'flex items-start gap-3 rounded-xl border-2 border-[#070b1c] bg-[#070b1c] p-4 text-left text-sm font-medium text-white transition'
+                          : 'flex items-start gap-3 rounded-xl border-2 border-slate-200 bg-white p-4 text-left text-sm font-medium text-slate-800 transition hover:border-slate-300'
+                      }
+                    >
+                      <span
+                        className={
+                          checked
+                            ? 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#00a0e9] text-white'
+                            : 'mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 border-slate-300'
+                        }
+                      >
+                        {checked && <Check className="h-3 w-3" />}
+                      </span>
+                      <span>{p.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.painPoints && (
+                <p className="text-xs text-destructive">{errors.painPoints.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="goal" className="text-base font-bold text-slate-900">
+                这次想优先解决的具体问题是什么？
+              </Label>
+              <p className="text-sm leading-6 text-slate-500">
+                3-5 句话即可，作为顾问准备诊断会议的输入。
+              </p>
+              <Textarea
+                id="goal"
+                placeholder="例如：每月 200 张发票人工录入要 3 天，想看 OCR 能不能直接接报销系统；或者：想知道我们的官网在 DeepSeek 上能不能被推荐到。"
+                rows={5}
+                className="resize-none"
+                {...register('goal')}
+              />
+              {errors.goal && <p className="text-xs text-destructive">{errors.goal.message}</p>}
+            </div>
+          </div>
+        )}
+
+        {currentStep === 1 && (
+          <div className="animate-in fade-in slide-in-from-right-4 space-y-5 duration-500">
+            <div className="space-y-2">
+              <Label className="text-base font-bold text-slate-900">您希望从哪一档开始？</Label>
+              <p className="text-sm leading-6 text-slate-500">
+                推荐先选 999 诊断；如果已经明确要用工具，可以直接选 2999 / 9999，已购买的 999
+                元全额抵扣首期。
+              </p>
+            </div>
+            <div className="grid gap-3">
+              {PLANS.map((plan) => {
+                const checked = selectedPlan === plan.id;
+                const recommended = plan.id === '999';
+                return (
+                  <label
+                    key={plan.id}
+                    className={
+                      checked
+                        ? 'flex cursor-pointer items-start gap-4 rounded-2xl border-2 border-[#070b1c] bg-[#070b1c] p-5 text-white transition'
+                        : 'flex cursor-pointer items-start gap-4 rounded-2xl border-2 border-slate-200 bg-white p-5 text-slate-900 transition hover:border-slate-300'
+                    }
+                  >
+                    <input
+                      type="radio"
+                      value={plan.id}
+                      {...register('interestedPlan')}
+                      className="sr-only"
+                    />
+                    <span
+                      className={
+                        checked
+                          ? 'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#00a0e9] text-white'
+                          : 'mt-1 h-5 w-5 shrink-0 rounded-full border-2 border-slate-300'
+                      }
+                    >
+                      {checked && <Check className="h-3 w-3" />}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="text-lg font-extrabold tracking-tight">
+                          {plan.shortLabel}
+                        </span>
+                        {recommended && (
+                          <span
+                            className={
+                              checked
+                                ? 'rounded-full bg-[#00a0e9] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#04122c]'
+                                : 'rounded-full bg-[#00a0e9]/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#0a6ea3]'
+                            }
+                          >
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className={
+                          checked ? 'mt-1 text-sm text-white/75' : 'mt-1 text-sm text-slate-600'
+                        }
+                      >
+                        {plan.tagline}
+                      </p>
+                      {plan.id !== '999' && (
+                        <p
+                          className={
+                            checked ? 'mt-2 text-xs text-[#00a0e9]' : 'mt-2 text-xs text-[#0a6ea3]'
+                          }
+                        >
+                          已购买 999 诊断的客户，可全额抵扣首期 999 元
+                        </p>
+                      )}
                     </div>
-                  )}
-                </label>
-              ))}
+                  </label>
+                );
+              })}
             </div>
             {errors.interestedPlan && (
               <p className="text-xs text-destructive">{errors.interestedPlan.message}</p>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Step 2: Info */}
-        <div className={currentStep === 1 ? 'block space-y-5 animate-in fade-in slide-in-from-right-4 duration-500' : 'hidden'}>
-          <div className="space-y-2">
-            <Label htmlFor="companyName">公司全称 <span className="text-destructive">*</span></Label>
-            <Input
-              id="companyName"
-              placeholder="例如：北京样本科技有限公司"
-              className="h-11 transition-colors focus-visible:ring-primary/50"
-              {...register('companyName')}
-            />
-            {errors.companyName && (
-              <p className="text-xs text-destructive">{errors.companyName.message}</p>
-            )}
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
+        {currentStep === 2 && (
+          <div className="animate-in fade-in slide-in-from-right-4 space-y-5 duration-500">
             <div className="space-y-2">
-              <Label htmlFor="contactName">联系人姓名 <span className="text-destructive">*</span></Label>
-              <Input 
-                id="contactName" 
-                placeholder="例如：张先生" 
-                className="h-11 transition-colors focus-visible:ring-primary/50"
-                {...register('contactName')} 
+              <Label htmlFor="companyName">
+                公司全称 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="companyName"
+                placeholder="例如：北京样本科技有限公司"
+                {...register('companyName')}
               />
-              {errors.contactName && (
-                <p className="text-xs text-destructive">{errors.contactName.message}</p>
+              {errors.companyName && (
+                <p className="text-xs text-destructive">{errors.companyName.message}</p>
               )}
             </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="contactName">
+                  联系人姓名 <span className="text-destructive">*</span>
+                </Label>
+                <Input id="contactName" placeholder="例如：张先生" {...register('contactName')} />
+                {errors.contactName && (
+                  <p className="text-xs text-destructive">{errors.contactName.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">手机号</Label>
+                <Input id="phone" placeholder="13800138000" {...register('phone')} />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="phone">手机号</Label>
-              <Input 
-                id="phone" 
-                placeholder="13800138000" 
-                className="h-11 transition-colors focus-visible:ring-primary/50"
-                {...register('phone')} 
+              <Label htmlFor="email">
+                企业邮箱 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@example.com"
+                {...register('email')}
+              />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">补充备注（可选）</Label>
+              <Textarea
+                id="notes"
+                placeholder="预约时段偏好 / 来源渠道 / 期望产出等"
+                rows={3}
+                className="resize-none"
+                {...register('notes')}
               />
             </div>
+
+            {error && (
+              <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+                {error}
+              </div>
+            )}
           </div>
+        )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">企业邮箱 <span className="text-destructive">*</span></Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="admin@example.com"
-              className="h-11 transition-colors focus-visible:ring-primary/50"
-              {...register('email')}
-            />
-            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-          </div>
-        </div>
-
-        {/* Step 3: Details */}
-        <div className={currentStep === 2 ? 'block space-y-5 animate-in fade-in slide-in-from-right-4 duration-500' : 'hidden'}>
-          <div className="space-y-2">
-            <Label htmlFor="useCase">您希望用它解决什么问题？</Label>
-            <Textarea
-              id="useCase"
-              placeholder="例如：每月 200 张发票人工录入要 3 天；或者想知道自己的网站在 DeepSeek / Claude 里能不能被推荐"
-              rows={5}
-              className="resize-none transition-colors focus-visible:ring-primary/50"
-              {...register('useCase')}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">其他备注（可选）</Label>
-            <Input 
-              id="notes" 
-              placeholder="特殊需求 / 来源渠道 / 参考客户等" 
-              className="h-11 transition-colors focus-visible:ring-primary/50"
-              {...register('notes')} 
-            />
-          </div>
-
-          {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md animate-in fade-in">{error}</p>}
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-8 border-t">
+        <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-7">
           <Button
             type="button"
             variant="ghost"
@@ -281,19 +384,27 @@ export function ApplyForm({
             disabled={currentStep === 0 || submitting}
             className={currentStep === 0 ? 'invisible' : ''}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" />
+            <ChevronLeft className="mr-1 h-4 w-4" />
             上一步
           </Button>
-          
+
           {currentStep < STEPS.length - 1 ? (
-            <Button type="button" onClick={handleNext} className="min-w-[120px]">
+            <Button
+              type="button"
+              onClick={handleNext}
+              className="min-w-[120px] rounded-xl bg-[#070b1c] text-white hover:bg-[#0e1430]"
+            >
               下一步
-              <ChevronRight className="ml-2 h-4 w-4" />
+              <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" disabled={submitting} className="min-w-[140px]">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="min-w-[140px] rounded-xl bg-[#00a0e9] text-[#04122c] hover:bg-[#28b3f0]"
+            >
               {submitting ? '提交中...' : '提交申请'}
-              {!submitting && <CheckCircle2 className="ml-2 h-4 w-4" />}
+              {!submitting && <CheckCircle2 className="ml-1 h-4 w-4" />}
             </Button>
           )}
         </div>
