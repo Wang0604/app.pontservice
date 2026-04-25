@@ -27,12 +27,20 @@ export default async function MarketingLayout({ children }: { children: React.Re
                 {user.email}
               </Link>
             ) : (
-              <Link
-                href="/login"
-                className="rounded-md border px-3 py-1.5 hover:bg-accent"
-              >
-                登录
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="rounded-md px-3 py-1.5 hover:bg-accent"
+                >
+                  登录
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-md border bg-primary px-3 py-1.5 text-primary-foreground hover:opacity-90"
+                >
+                  注册
+                </Link>
+              </div>
             )}
           </nav>
         </div>

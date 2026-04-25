@@ -3,53 +3,77 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { signIn, authClient } from '@/lib/auth/client';
+import { normalizeCnPhoneNumber } from '@/lib/auth/phone';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+type Tab = 'phone' | 'email';
 
 function LoginFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') ?? '/account';
 
-  const [stage, setStage] = useState<'email' | 'otp'>('email');
+  const [tab, setTab] = useState<Tab>('phone');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSendOtp(e: React.FormEvent) {
+  async function handlePhoneLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const normalized = normalizeCnPhoneNumber(phone);
+    if (!normalized) {
+      setError('请输入正确的中国大陆手机号（11 位）');
+      return;
+    }
+    if (password.length < 8) {
+      setError('密码至少 8 位');
+      return;
+    }
     setLoading(true);
     try {
-      const result = await authClient.emailOtp.sendVerificationOtp({
-        email,
-        type: 'sign-in',
+      // better-auth phoneNumber plugin: authClient.signIn.phoneNumber
+      const result = await (
+        authClient.signIn as unknown as {
+          phoneNumber: (args: { phoneNumber: string; password: string }) => Promise<{
+            error: { message?: string } | null;
+          }>;
+        }
+      ).phoneNumber({
+        phoneNumber: normalized,
+        password,
       });
-      if (result.error) throw new Error(result.error.message);
-      setStage('otp');
+      if (result.error) throw new Error(result.error.message ?? '登录失败');
+      router.push(redirectTo);
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '发送验证码失败');
+      setError(err instanceof Error ? err.message : '手机号或密码不正确');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleVerifyOtp(e: React.FormEvent) {
+  async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (password.length < 8) {
+      setError('密码至少 8 位');
+      return;
+    }
     setLoading(true);
     try {
-      const result = await signIn.emailOtp({ email, otp });
-      if (result.error) throw new Error(result.error.message);
+      const result = await signIn.email({ email, password });
+      if (result.error) throw new Error(result.error.message ?? '登录失败');
       router.push(redirectTo);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '验证码错误');
+      setError(err instanceof Error ? err.message : '邮箱或密码不正确');
     } finally {
       setLoading(false);
     }
@@ -60,12 +84,77 @@ function LoginFlow() {
       <CardHeader>
         <CardTitle>登录 Pontai</CardTitle>
         <CardDescription>
-          {stage === 'email' ? '输入企业邮箱，我们会发一个 6 位验证码' : `验证码已发送到 ${email}`}
+          {tab === 'phone' ? '使用手机号 + 密码登录（推荐）' : '使用企业邮箱 + 密码登录'}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {stage === 'email' ? (
-          <form onSubmit={handleSendOtp} className="space-y-4">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-md bg-muted p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setTab('phone');
+              setError(null);
+            }}
+            className={
+              tab === 'phone'
+                ? 'rounded-sm bg-background px-3 py-1.5 text-sm font-medium shadow-sm'
+                : 'rounded-sm px-3 py-1.5 text-sm text-muted-foreground'
+            }
+          >
+            手机号
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTab('email');
+              setError(null);
+            }}
+            className={
+              tab === 'email'
+                ? 'rounded-sm bg-background px-3 py-1.5 text-sm font-medium shadow-sm'
+                : 'rounded-sm px-3 py-1.5 text-sm text-muted-foreground'
+            }
+          >
+            邮箱
+          </button>
+        </div>
+
+        {tab === 'phone' ? (
+          <form onSubmit={handlePhoneLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">手机号</Label>
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="numeric"
+                placeholder="13800138000"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={loading}
+                autoComplete="tel"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">密码</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="至少 8 位"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                autoComplete="current-password"
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? '登录中...' : '登录'}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">企业邮箱</Label>
               <Input
@@ -76,50 +165,37 @@ function LoginFlow() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading || !email}>
-              {loading ? '发送中...' : '发送验证码'}
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="otp">6 位验证码</Label>
+              <Label htmlFor="password">密码</Label>
               <Input
-                id="otp"
-                type="text"
-                inputMode="numeric"
-                pattern="\d{6}"
-                placeholder="123456"
+                id="password"
+                type="password"
+                placeholder="至少 8 位"
                 required
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                autoFocus
+                autoComplete="current-password"
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
-              {loading ? '验证中...' : '登录'}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => {
-                setStage('email');
-                setOtp('');
-                setError(null);
-              }}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              换个邮箱
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? '登录中...' : '登录'}
             </Button>
           </form>
         )}
+
+        <div className="mt-6 flex items-center justify-between text-sm">
+          <Link href="/forgot-password" className="text-muted-foreground hover:text-primary">
+            忘记密码？
+          </Link>
+          <Link href={`/register?redirectTo=${encodeURIComponent(redirectTo)}`} className="font-medium hover:text-primary">
+            还没有账号？立即注册
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

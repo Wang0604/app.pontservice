@@ -44,10 +44,8 @@ export const generateContractPdfFunction = inngest.createFunction(
         orderNumber: order.orderNumber,
         templateId: contract.templateId as ContractTemplateId,
         amountCny: parseFloat(order.actualAmountCny),
-        listPriceCny: plan.listPriceCny,
-        earlyBird: order.earlyBird,
         credits: plan.credits,
-        durationMonths: plan.durationMonths,
+        billingCycle: plan.billingCycle,
         customer: {
           companyName: lead.companyName,
           contactName: lead.contactName,

@@ -8,6 +8,7 @@ import { generateInvoicePdf, buildInvoiceData } from '@/lib/invoices/generate';
 import { storageProvider } from '@/lib/providers/storage/r2';
 import { emailProvider } from '@/lib/providers/email/resend';
 import { activationEmail } from '@/lib/providers/email/templates';
+import { auth } from '@/lib/auth/server';
 
 export async function activateOrder(params: {
   orderId: string;
@@ -27,19 +28,24 @@ export async function activateOrder(params: {
   if (!lead) throw new Error('lead missing');
 
   let userId = order.userId ?? null;
+  let isNewUser = false;
   if (!userId) {
     const [existingUser] = await db.select().from(users).where(eq(users.email, lead.email));
     if (existingUser) {
       userId = existingUser.id;
     } else {
       userId = `user-${randomUUID()}`;
+      isNewUser = true;
       await db.insert(users).values({
         id: userId,
         email: lead.email,
         emailVerified: true,
         name: lead.contactName,
         companyName: lead.companyName,
-        phone: lead.phone,
+        // phoneNumber 不自动从 lead 写入：
+        //  - phoneNumber 是 unique 的，多个 lead 共用同一个手机号会冲突
+        //  - 客户应自己通过登录后的「我的账户」绑定手机号（带短信验证）
+        // 先留空，由客户后续自助补全
         role: 'user',
       });
     }
@@ -94,13 +100,13 @@ export async function activateOrder(params: {
   });
 
   const invoiceBuffer = Buffer.isBuffer(invoicePdf) ? invoicePdf : Buffer.from(invoicePdf);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
     const { subject, html } = activationEmail({
       companyName: lead.companyName,
       orderNumber: order.orderNumber,
       creditsGranted: plan.credits,
-      loginUrl: `${appUrl}/account`,
+      loginUrl: `${appUrl}/login`,
     });
     await emailProvider.send({
       to: lead.email,
@@ -116,6 +122,22 @@ export async function activateOrder(params: {
     });
   } catch (err) {
     console.error('[activate] activation email failed', err);
+  }
+
+  // 新用户：触发一封「设置密码」邮件 — 用 Better Auth 的密码重置令牌机制
+  // 老板第一次进系统就能直接设置密码，不必走「忘记密码」迂回路径
+  if (isNewUser) {
+    try {
+      await auth.api.requestPasswordReset({
+        body: {
+          email: lead.email,
+          redirectTo: '/reset-password',
+        },
+      });
+    } catch (err) {
+      // 不抛 — 客户至少可以走「忘记密码」入口
+      console.error('[activate] requestPasswordReset invite failed', err);
+    }
   }
 
   return { ok: true, userId, creditsGranted: plan.credits, invoiceKey };

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { leads, orders } from '@/lib/db/schema';
 import { getCurrentSession } from '@/lib/auth/helpers';
-import { getPlan } from '@/lib/pricing';
+import { getPlan, PLAN_IDS } from '@/lib/pricing';
 import { emailProvider } from '@/lib/providers/email/resend';
 import { leadNotificationEmail } from '@/lib/providers/email/templates';
 import { generateOrderNumber } from '@/lib/utils';
@@ -13,7 +13,7 @@ const schema = z.object({
   contactName: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional(),
-  interestedPlan: z.enum(['999', '2999', '36000']),
+  interestedPlan: z.enum(PLAN_IDS),
   useCase: z.string().optional(),
   notes: z.string().optional(),
   source: z.string().optional(),
@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
       leadId: lead.id,
       userId: session?.user.id,
       planType: data.interestedPlan,
-      amountCny: plan.listPriceCny.toFixed(2),
-      actualAmountCny: plan.listPriceCny.toFixed(2),
+      amountCny: plan.priceCny.toFixed(2),
+      actualAmountCny: plan.priceCny.toFixed(2),
       earlyBird: false,
       paperworkStatus: 'draft',
     });

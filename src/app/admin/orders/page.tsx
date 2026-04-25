@@ -31,7 +31,6 @@ export default async function AdminOrdersPage({
       orderNumber: orders.orderNumber,
       planType: orders.planType,
       amount: orders.actualAmountCny,
-      earlyBird: orders.earlyBird,
       paperworkStatus: orders.paperworkStatus,
       createdAt: orders.createdAt,
       leadCompany: leads.companyName,
@@ -86,7 +85,6 @@ export default async function AdminOrdersPage({
                   <td className="p-3">{getPlanShortLabel(o.planType)}</td>
                   <td className="p-3">
                     {formatYuan(parseFloat(o.amount))}
-                    {o.earlyBird && <span className="ml-1 text-xs text-red-600">早鸟</span>}
                   </td>
                   <td className="p-3">
                     <span className="rounded bg-muted px-2 py-0.5 text-xs">

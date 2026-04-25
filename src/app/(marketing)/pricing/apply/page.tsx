@@ -47,7 +47,8 @@ export default async function ApplyPage({
                     name: user.name ?? '',
                     companyName:
                       (user as unknown as { companyName?: string | null }).companyName ?? '',
-                    phone: (user as unknown as { phone?: string | null }).phone ?? '',
+                    phone:
+                      (user as unknown as { phoneNumber?: string | null }).phoneNumber ?? '',
                   }
                 : undefined
             }

@@ -54,3 +54,6 @@ drizzle/meta/
 # temp
 tmp/
 temp/
+
+# embedded postgres (PGlite) dev data dir
+.local.pgdata/

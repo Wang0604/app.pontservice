@@ -96,9 +96,9 @@ pnpm create next-app@latest pontai --typescript --tailwind --eslint --app --src-
 
 - [ ] `/`（首页，价值主张 + 案例 + CTA）
 - [ ] `/pricing`（三档套餐展示）
-  - ¥999 咨询
+  - ¥999 诊断
   - ¥2999 OCR 工具包
-  - ¥36000 年付全包
+  - ¥9999 增长陪跑包
   - 早鸟价标注
 - [ ] `/pricing/apply`（意向表单）
 - [ ] API `POST /api/leads`（写入 leads 表 + Resend 发邮件通知）
@@ -263,7 +263,7 @@ pnpm create next-app@latest pontai --typescript --tailwind --eslint --app --src-
 - [ ] 抓取 + 规则引擎（title/meta/heading/vitals）
 - [ ] Anthropic Claude 评估 + 3-5 条可执行建议
 - [ ] PDF 报告导出（用 `@react-pdf/renderer`）
-- [ ] Lead 钩子: 问题 > 3 项 → 弹"999 咨询"
+- [ ] Lead 钩子: 问题 > 3 项 → 弹"999 诊断"
 
 **说明**: Stage 1 早期也可以继续用 Browserless（$30/月），等调用量起来再切自建，成本 $5-10/月 Railway service。
 

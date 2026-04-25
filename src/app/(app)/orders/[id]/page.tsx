@@ -48,7 +48,6 @@ export default async function OrderDetail({ params }: { params: { id: string } }
       <h1 className="mt-4 text-3xl font-bold">订单 {order.orderNumber}</h1>
       <p className="mt-2 text-muted-foreground">
         {getPlanShortLabel(order.planType)} · {formatYuan(parseFloat(order.actualAmountCny))}
-        {order.earlyBird && ' · 早鸟价'}
       </p>
 
       <ProgressBar status={order.paperworkStatus} />

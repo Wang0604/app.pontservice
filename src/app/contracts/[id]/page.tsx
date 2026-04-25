@@ -40,7 +40,6 @@ export default async function ContractPage({ params }: { params: { id: string } 
           <CardDescription>
             {STATUS_LABELS[contract.status] ?? contract.status} ·
             {getPlanShortLabel(order.planType)} · ¥{parseFloat(order.actualAmountCny).toLocaleString()}
-            {order.earlyBird && ' (早鸟价)'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

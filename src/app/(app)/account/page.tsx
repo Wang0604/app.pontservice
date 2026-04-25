@@ -1,7 +1,8 @@
-import { requireUser } from '@/lib/auth/helpers';
+import { requireUser, getEnrichedUser } from '@/lib/auth/helpers';
 import { getBalance, listTransactions, ensureWelcomeCreditsOnce } from '@/lib/credits';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
+import { maskCnPhone } from '@/lib/auth/phone';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -17,9 +18,15 @@ export default async function AccountPage() {
   const session = await requireUser();
   const userId = session.user.id;
 
+  // 兜底：databaseHooks 已经会在新用户注册时发放，但管理员通过 activate 创建的账号
+  // 不会经过 hook，所以仍需要这一行作为「首次进入账户页」的兜底机制
   await ensureWelcomeCreditsOnce(userId);
 
-  const [balance, transactions] = await Promise.all([getBalance(userId), listTransactions(userId, 50)]);
+  const [balance, transactions, dbUser] = await Promise.all([
+    getBalance(userId),
+    listTransactions(userId, 50),
+    getEnrichedUser(userId),
+  ]);
 
   return (
     <div className="container space-y-6 py-10">
@@ -27,9 +34,8 @@ export default async function AccountPage() {
         <h1 className="text-3xl font-bold">我的账户</h1>
         <p className="text-muted-foreground">
           {session.user.email}
-          {(session.user as unknown as { companyName?: string }).companyName
-            ? ` · ${(session.user as unknown as { companyName: string }).companyName}`
-            : ''}
+          {dbUser?.companyName ? ` · ${dbUser.companyName}` : ''}
+          {dbUser?.phoneNumber ? ` · ${maskCnPhone(dbUser.phoneNumber)}` : ''}
         </p>
       </div>
 

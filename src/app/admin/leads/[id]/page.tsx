@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { leads, orders } from '@/lib/db/schema';
 import { formatDate } from '@/lib/utils';
-import { getPlan, getPlanShortLabel } from '@/lib/pricing';
+import { getPlan, getPlanShortLabel, type PlanId } from '@/lib/pricing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LeadApprovalPanel } from './approval-panel';
 
@@ -46,7 +46,8 @@ export default async function AdminLeadDetail({ params }: { params: { id: string
               {getPlanShortLabel(lead.interestedPlan)}
               {plan && (
                 <span className="text-muted-foreground">
-                  （原价 ¥{plan.listPriceCny} / 早鸟价 ¥{plan.earlyBirdPriceCny}）
+                  （标准价 ¥{plan.priceCny}
+                  {plan.billingCycle === 'monthly' ? ' / 月' : ''}）
                 </span>
               )}
             </div>
@@ -85,7 +86,7 @@ export default async function AdminLeadDetail({ params }: { params: { id: string
                 </div>
                 <div>
                   金额: ¥{parseFloat(order.actualAmountCny).toLocaleString()}
-                  {order.earlyBird && ' (早鸟)'}
+                  {plan?.billingCycle === 'monthly' ? ' / 月' : ''}
                 </div>
                 <div>状态: {order.paperworkStatus}</div>
               </>
@@ -103,9 +104,8 @@ export default async function AdminLeadDetail({ params }: { params: { id: string
           currentLeadStatus={lead.status}
           currentPaperworkStatus={order?.paperworkStatus ?? 'draft'}
           currentAmount={parseFloat(order?.actualAmountCny ?? '0')}
-          currentEarlyBird={order?.earlyBird ?? false}
           currentContractId={order?.contractId ?? null}
-          planId={lead.interestedPlan as '999' | '2999' | '36000'}
+          planId={lead.interestedPlan as PlanId}
         />
       </div>
     </div>

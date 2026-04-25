@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PLANS } from '@/lib/pricing';
+import { PLANS, PLAN_IDS, type PlanId } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +16,7 @@ const applySchema = z.object({
   contactName: z.string().min(1, '必填'),
   email: z.string().email('邮箱格式不对'),
   phone: z.string().optional(),
-  interestedPlan: z.enum(['999', '2999', '36000']),
+  interestedPlan: z.enum(PLAN_IDS),
   useCase: z.string().optional(),
   notes: z.string().optional(),
   source: z.string().optional(),
@@ -35,7 +35,7 @@ export function ApplyForm({
   defaultPlan,
   prefill,
 }: {
-  defaultPlan: '999' | '2999' | '36000';
+  defaultPlan: PlanId;
   prefill?: Prefill;
 }) {
   const router = useRouter();
@@ -150,7 +150,7 @@ export function ApplyForm({
         <Label htmlFor="useCase">您希望用它解决什么问题？</Label>
         <Textarea
           id="useCase"
-          placeholder="例如：每月 200 张发票人工录入要 3 天，希望压到 2 小时"
+          placeholder="例如：每月 200 张发票人工录入要 3 天；或者想知道自己的网站在 DeepSeek / Claude 里能不能被推荐"
           rows={4}
           {...register('useCase')}
         />

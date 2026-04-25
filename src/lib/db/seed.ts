@@ -17,6 +17,7 @@ async function main() {
         emailVerified: true,
         name: 'Test Admin',
         role: 'admin',
+        phoneNumberVerified: false,
       },
       {
         id: testUserId,
@@ -25,6 +26,7 @@ async function main() {
         name: 'Test User',
         role: 'user',
         companyName: '测试科技有限公司',
+        phoneNumberVerified: false,
       },
     ])
     .onConflictDoNothing();

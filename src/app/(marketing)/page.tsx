@@ -10,7 +10,7 @@ export default function HomePage() {
           AI 工具与咨询
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          一次咨询解决一个具体问题，一套工具长期陪跑。
+          先做诊断看清问题，再用工具和陪跑把结果落地。
           <br />
           999 元起步，对公打款，合同保障，正规发票。
         </p>
@@ -34,11 +34,11 @@ export default function HomePage() {
         <FeatureCard
           icon={<Sparkles className="h-6 w-6" />}
           title="AI 工具矩阵"
-          description="OCR 发票识别、SEO 诊断等，按月 credits 计费，用多少算多少。"
+          description="OCR 发票识别先上线，SEO / GEO 诊断工具后续接入，同一套 credits 体系。"
         />
         <FeatureCard
           icon={<FileText className="h-6 w-6" />}
-          title="999 咨询"
+          title="999 诊断"
           description="1 小时一对一远程，出一份可执行的 PDF 诊断报告。"
         />
         <FeatureCard

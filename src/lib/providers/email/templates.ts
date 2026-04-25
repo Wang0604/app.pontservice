@@ -22,18 +22,25 @@ const BUTTON_STYLE = `
   font-weight: 500;
 `;
 
-export function otpEmail(params: { otp: string; appName?: string }): { subject: string; html: string } {
+export function passwordResetEmail(params: {
+  resetUrl: string;
+  appName?: string;
+  expireMinutes?: number;
+}): { subject: string; html: string } {
   const appName = params.appName ?? 'Pontai';
+  const expireMinutes = params.expireMinutes ?? 60;
   return {
-    subject: `${appName} 验证码: ${params.otp}`,
+    subject: `${appName} 密码设置链接`,
     html: `
       <div style="${BASE_STYLE}">
-        <h2>${appName} 登录验证码</h2>
-        <p>您的验证码是：</p>
-        <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 24px 0; padding: 16px; background-color: #f5f5f5; border-radius: 8px; text-align: center;">
-          ${params.otp}
-        </div>
-        <p>验证码 10 分钟内有效。如果不是您本人操作，请忽略此邮件。</p>
+        <h2>设置 / 重置 ${appName} 登录密码</h2>
+        <p>请点击下方按钮设置或重置您的登录密码（如果是首次激活，这就是您的「设置密码」链接）：</p>
+        <p style="margin: 24px 0;">
+          <a href="${params.resetUrl}" style="${BUTTON_STYLE}">设置密码</a>
+        </p>
+        <p>链接 ${expireMinutes} 分钟内有效。设置完成后，您可以用 <strong>邮箱 + 密码</strong> 登录；如果想用 <strong>手机号 + 密码</strong> 登录，可以在登录后到「我的账户」绑定手机号。</p>
+        <p>如果不是您本人操作，请忽略此邮件，您的账号是安全的。</p>
+        <p style="color: #666; font-size: 13px; word-break: break-all;">如果按钮无法点击，请复制此链接到浏览器：<br>${params.resetUrl}</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
         <p style="color: #666; font-size: 14px;">${appName} · 为实业服务</p>
       </div>
@@ -50,7 +57,7 @@ export function leadNotificationEmail(params: {
   useCase?: string | null;
   leadUrl: string;
 }): { subject: string; html: string } {
-  const planLabel = { '999': '999 咨询', '2999': '2999 OCR 工具包', '36000': '36000 年付全包' }[
+  const planLabel = { '999': '999 诊断', '2999': '2999 工具包', '9999': '9999 增长包' }[
     params.interestedPlan
   ] ?? params.interestedPlan;
 
@@ -87,7 +94,7 @@ export function contractReadyEmail(params: {
         <p style="margin: 24px 0;">
           <a href="${params.contractUrl}" style="${BUTTON_STYLE}">查看并签署合同</a>
         </p>
-        <p>合同链接长期有效，但建议尽快签署以避免价格调整（尤其是早鸟价客户）。</p>
+        <p>合同链接长期有效，建议尽快签署以便及时启动服务。</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
         <p style="color: #666; font-size: 14px;">Pontai · 如有疑问回复此邮件即可</p>
       </div>

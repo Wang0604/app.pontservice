@@ -35,3 +35,12 @@ export async function ensureUserRoleFromEnv(userId: string, email: string) {
     await db.update(users).set({ role: 'admin' }).where(eq(users.id, userId));
   }
 }
+
+/**
+ * Read the most up-to-date phone number / company name from the DB. The session
+ * object can become stale because Better Auth caches additional fields at sign-in.
+ */
+export async function getEnrichedUser(userId: string) {
+  const [row] = await db.select().from(users).where(eq(users.id, userId));
+  return row ?? null;
+}

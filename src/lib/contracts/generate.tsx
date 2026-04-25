@@ -2,15 +2,14 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { ContractDocument } from './render-pdf';
 import { buildContractVariables, renderContractMarkdown } from './fill-template';
 import type { ContractTemplateId, ContractVariables } from './types';
+import type { BillingCycle } from '@/lib/pricing';
 
 export async function generateContractPdf(params: {
   orderNumber: string;
   templateId: ContractTemplateId;
   amountCny: number;
-  listPriceCny: number;
-  earlyBird: boolean;
   credits: number;
-  durationMonths: number;
+  billingCycle: BillingCycle;
   customer: {
     companyName: string;
     contactName: string;

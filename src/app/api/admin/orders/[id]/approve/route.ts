@@ -9,7 +9,6 @@ import { inngest } from '@/lib/inngest/client';
 
 const schema = z.object({
   amountCny: z.number().positive(),
-  earlyBird: z.boolean(),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -34,7 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .update(orders)
       .set({
         actualAmountCny: body.data.amountCny.toFixed(2),
-        earlyBird: body.data.earlyBird,
+        // earlyBird 字段保留在 schema 中只是为了向后兼容，业务上不再使用
+        earlyBird: false,
         paperworkStatus: 'pending_approval',
         updatedAt: new Date(),
       })

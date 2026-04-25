@@ -29,9 +29,12 @@ export const users = pgTable(
     name: text('name'),
     image: text('image'),
 
+    // Phone-number plugin fields (Better Auth maps JS field name → these columns)
+    phoneNumber: text('phone_number').unique(),
+    phoneNumberVerified: boolean('phone_number_verified').notNull().default(false),
+
     fullName: text('full_name'),
     companyName: text('company_name'),
-    phone: text('phone'),
     role: text('role').notNull().default('user'),
 
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -39,6 +42,7 @@ export const users = pgTable(
   },
   (t) => ({
     emailIdx: uniqueIndex('user_email_idx').on(t.email),
+    phoneIdx: uniqueIndex('user_phone_number_idx').on(t.phoneNumber),
   }),
 );
 
@@ -375,7 +379,7 @@ export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 export const RECEIPT_STATUSES = ['pending', 'verified', 'rejected'] as const;
 export type ReceiptStatus = (typeof RECEIPT_STATUSES)[number];
 
-export const PLAN_TYPES = ['999', '2999', '36000'] as const;
+export const PLAN_TYPES = ['999', '2999', '9999'] as const;
 export type PlanType = (typeof PLAN_TYPES)[number];
 
 export const USER_ROLES = ['user', 'staff', 'admin'] as const;

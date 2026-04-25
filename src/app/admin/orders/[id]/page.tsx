@@ -34,7 +34,6 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
       <h1 className="mt-4 text-3xl font-bold">订单 {order.orderNumber}</h1>
       <p className="text-muted-foreground">
         {getPlanShortLabel(order.planType)} · {formatYuan(parseFloat(order.actualAmountCny))}
-        {order.earlyBird && ' · 早鸟价'}
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

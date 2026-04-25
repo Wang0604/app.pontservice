@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { PLANS } from '@/lib/pricing';
+import { PLANS, type PlanId } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,29 +15,20 @@ export function LeadApprovalPanel(props: {
   currentLeadStatus: string;
   currentPaperworkStatus: string;
   currentAmount: number;
-  currentEarlyBird: boolean;
   currentContractId: string | null;
-  planId: '999' | '2999' | '36000';
+  planId: PlanId;
 }) {
   const router = useRouter();
   const plan = PLANS.find((p) => p.id === props.planId);
 
-  const [amount, setAmount] = useState<number>(props.currentAmount || plan?.listPriceCny || 0);
-  const [earlyBird, setEarlyBird] = useState(props.currentEarlyBird);
+  const [amount, setAmount] = useState<number>(props.currentAmount || plan?.priceCny || 0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function applyEarlyBird() {
-    if (!plan) return;
-    setEarlyBird(true);
-    setAmount(plan.earlyBirdPriceCny);
-  }
-
   function applyListPrice() {
     if (!plan) return;
-    setEarlyBird(false);
-    setAmount(plan.listPriceCny);
+    setAmount(plan.priceCny);
   }
 
   async function handleApprove() {
@@ -49,7 +40,7 @@ export function LeadApprovalPanel(props: {
       const res = await fetch(`/api/admin/orders/${props.orderId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amountCny: amount, earlyBird }),
+        body: JSON.stringify({ amountCny: amount }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? '审批失败');
       setMessage('已审批通过，合同 PDF 正在生成。刷新后可点击"发送给客户"');
@@ -97,6 +88,7 @@ export function LeadApprovalPanel(props: {
 
   const canApprove = props.currentPaperworkStatus === 'draft' || props.currentPaperworkStatus === 'pending_approval';
   const canSend = props.currentPaperworkStatus === 'pending_approval' && props.currentContractId;
+  const isMonthly = plan?.billingCycle === 'monthly';
 
   return (
     <Card>
@@ -109,7 +101,9 @@ export function LeadApprovalPanel(props: {
       <CardContent className="space-y-5">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="amount">最终价格（元）</Label>
+            <Label htmlFor="amount">
+              最终价格（元）{isMonthly && <span className="text-muted-foreground"> · 按月</span>}
+            </Label>
             <Input
               id="amount"
               type="number"
@@ -122,21 +116,15 @@ export function LeadApprovalPanel(props: {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={applyEarlyBird}
-                disabled={!canApprove}
-              >
-                用早鸟价 ¥{plan?.earlyBirdPriceCny}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
                 onClick={applyListPrice}
                 disabled={!canApprove}
               >
-                用原价 ¥{plan?.listPriceCny}
+                重置为标准价 ¥{plan?.priceCny}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              如果跟客户谈过特殊价格（折扣 / 涨价），直接填实际成交价即可。
+            </p>
           </div>
           <div className="space-y-2">
             <Label>当前状态</Label>
@@ -148,7 +136,7 @@ export function LeadApprovalPanel(props: {
                 合同状态: <strong>{props.currentPaperworkStatus}</strong>
               </div>
               <div>
-                早鸟: <strong>{earlyBird ? '是' : '否'}</strong>
+                计费周期: <strong>{isMonthly ? '按月订阅' : '一次性'}</strong>
               </div>
             </div>
           </div>

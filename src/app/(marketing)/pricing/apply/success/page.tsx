@@ -18,7 +18,7 @@ export default function ApplySuccessPage() {
           <div className="rounded bg-muted p-4 text-left text-sm text-muted-foreground">
             <p className="mb-2 font-medium text-foreground">接下来会发生什么？</p>
             <ol className="list-decimal space-y-1 pl-4">
-              <li>我们审核您的申请，确认价格和条款（如有早鸟价我们会注明）</li>
+              <li>我们审核您的申请，确认价格和条款</li>
               <li>生成电子合同，邮件发给您</li>
               <li>您在邮件链接里查看并电子签署，不用打印</li>
               <li>按合同对公打款（订单号做转账备注）</li>

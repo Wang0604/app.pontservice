@@ -2,6 +2,7 @@ import Handlebars from 'handlebars';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ContractTemplateId, ContractVariables } from './types';
+import type { BillingCycle } from '@/lib/pricing';
 
 const TEMPLATE_DIR = path.join(process.cwd(), 'src/lib/contracts/templates');
 const CACHE = new Map<string, Handlebars.TemplateDelegate>();
@@ -32,10 +33,8 @@ export async function renderContractMarkdown(
 export function buildContractVariables(params: {
   orderNumber: string;
   amountCny: number;
-  listPriceCny: number;
-  earlyBird: boolean;
   credits: number;
-  durationMonths: number;
+  billingCycle: BillingCycle;
   customer: {
     companyName: string;
     contactName: string;
@@ -45,18 +44,13 @@ export function buildContractVariables(params: {
   signDate?: Date;
 }): ContractVariables {
   const signDate = (params.signDate ?? new Date()).toISOString().slice(0, 10);
-  const creditsPerMonth =
-    params.durationMonths > 0 ? Math.round(params.credits / params.durationMonths) : undefined;
 
   return {
     orderNumber: params.orderNumber,
     signDate,
     amount: params.amountCny.toLocaleString('zh-CN', { minimumFractionDigits: 0 }),
-    listPrice: params.listPriceCny.toLocaleString('zh-CN', { minimumFractionDigits: 0 }),
-    earlyBird: params.earlyBird,
     credits: params.credits,
-    creditsPerMonth,
-    durationMonths: params.durationMonths,
+    billingCycle: params.billingCycle,
     customer: {
       companyName: params.customer.companyName,
       contactName: params.customer.contactName,
