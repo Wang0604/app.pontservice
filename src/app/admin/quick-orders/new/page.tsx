@@ -22,9 +22,10 @@ export default async function QuickOrderNewPage() {
             <ArrowLeft className="h-3 w-3" />
             返回看板
           </Link>
-          <h1 className="text-3xl font-bold">快速收款</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            适合年付、种子客户、特殊报价等场景。一键生成微信收款链接，发给客户即可。
+          <h1 className="text-3xl font-bold">迅速付款链接</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            999 单次启动包、2999 / 9999 月付、2999 × 12 / 9999 × 12 包年——三种付款都能一键生成微信收款链接发给客户。
+            包年自动「免 Credits 限制」。
           </p>
         </div>
         <div className="text-right text-xs">

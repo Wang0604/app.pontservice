@@ -27,8 +27,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link
                 href="/admin/quick-orders/new"
                 className="rounded-full bg-primary/10 px-3 py-1 text-primary hover:bg-primary/20"
+                title="999 单次 / 月付 / 2999×12 包年（免 Credits）"
               >
-                快速收款 +
+                迅速付款链接 +
               </Link>
             </nav>
           </div>
