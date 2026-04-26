@@ -56,12 +56,13 @@ export function QuickOrderForm({ defaultAppUrl }: { defaultAppUrl: string }) {
       .catch(() => setQrDataUrl(null));
   }, [result?.qrCodeUrl]);
 
+  const currentPlan = PLANS.find((p) => p.id === planType);
+  const isMonthlyPlan = currentPlan?.billingCycle === 'monthly';
+
   function applySuggestedSubject(plan: PlanId, amount: number) {
     const planDef = PLANS.find((p) => p.id === plan);
     if (!planDef) return;
-    if (plan === '2999' && amount > planDef.priceCny * 6) {
-      setSubject(`PONT AI ${planDef.shortLabel} · 年付（种子客户）`);
-    } else if (plan === '9999' && amount > planDef.priceCny * 6) {
+    if (planDef.billingCycle === 'monthly' && amount > planDef.priceCny * 6) {
       setSubject(`PONT AI ${planDef.shortLabel} · 年付（种子客户）`);
     } else {
       setSubject(`PONT AI ${planDef.shortLabel}`);
@@ -78,7 +79,7 @@ export function QuickOrderForm({ defaultAppUrl }: { defaultAppUrl: string }) {
 
   function applyAnnualPreset() {
     const planDef = PLANS.find((p) => p.id === planType);
-    if (!planDef) return;
+    if (!planDef || planDef.billingCycle !== 'monthly') return;
     const annual = planDef.priceCny * 12;
     setAmountCny(annual);
     applySuggestedSubject(planType, annual);
@@ -229,14 +230,14 @@ export function QuickOrderForm({ defaultAppUrl }: { defaultAppUrl: string }) {
                       <div className="text-sm font-bold">{p.label}</div>
                       <div className="text-xs text-muted-foreground">
                         标准价 ¥{p.price.toLocaleString()}
-                        {p.cycle === 'monthly' ? ' /月' : ''}
+                        {p.cycle === 'monthly' ? ' /月' : ' · 一次性'}
                       </div>
                     </button>
                   );
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                套餐决定合同模板和默认 credits 池；金额可以自定义（年付、折扣价、特殊报价都行）。
+                999 启动包是一次性付费；2999 / 9999 是按月订阅，可以「按年付」一次性收 12 个月。
               </p>
             </div>
 
@@ -254,15 +255,26 @@ export function QuickOrderForm({ defaultAppUrl }: { defaultAppUrl: string }) {
                   disabled={loading || !!result}
                 />
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={applyAnnualPreset}
-                disabled={loading || !!result}
-                title={`一次按 12 个月收：¥${(PLANS.find((p) => p.id === planType)?.priceCny ?? 0) * 12}`}
-              >
-                按年付（×12）
-              </Button>
+              {isMonthlyPlan ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={applyAnnualPreset}
+                  disabled={loading || !!result}
+                  title={`一次按 12 个月收：¥${(currentPlan?.priceCny ?? 0) * 12}`}
+                >
+                  按年付（×12）
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  title="999 是一次性付费，没有 ×12 概念"
+                >
+                  仅一次付费
+                </Button>
+              )}
             </div>
 
             <div className="space-y-1.5">
