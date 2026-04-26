@@ -54,8 +54,22 @@ async function wechatFetch<T>(method: 'GET' | 'POST', pathWithQuery: string, bod
   const text = await res.text();
   const data = text ? (JSON.parse(text) as T) : ({} as T);
   if (!res.ok) {
-    const errorData = data as T & { message?: string };
-    throw new Error(errorData.message ?? `微信支付请求失败 (${res.status})`);
+    const errorData = data as T & { code?: string; message?: string; detail?: unknown };
+    console.error('[wechat-pay] api error', {
+      method,
+      path: pathWithQuery,
+      status: res.status,
+      requestId: res.headers.get('request-id'),
+      code: errorData.code,
+      message: errorData.message,
+      detail: errorData.detail,
+    });
+    const friendlyDetail = errorData.detail
+      ? ` · ${typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail)}`
+      : '';
+    throw new Error(
+      `微信支付请求失败 [${res.status}${errorData.code ? ' · ' + errorData.code : ''}]: ${errorData.message ?? '未知错误'}${friendlyDetail}`,
+    );
   }
   return data;
 }

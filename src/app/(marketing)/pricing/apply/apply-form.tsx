@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { ENTRY_PLAN_ID } from '@/lib/pricing';
+import { Check, ChevronLeft, ChevronRight, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,6 +55,7 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needLoginUrl, setNeedLoginUrl] = useState<string | null>(null);
 
   const {
     register,
@@ -96,6 +97,7 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
   async function onSubmit(data: ApplyInput) {
     if (currentStep !== STEPS.length - 1) return;
     setError(null);
+    setNeedLoginUrl(null);
     setSubmitting(true);
     try {
       const useCase = [
@@ -106,7 +108,7 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
         data.goal,
       ].join('\n');
 
-      const res = await fetch('/api/leads', {
+      const res = await fetch('/api/checkout/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,17 +116,25 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
           contactName: data.contactName,
           email: data.email,
           phone: data.phone,
-          interestedPlan: ENTRY_PLAN_ID,
           useCase,
           notes: data.notes,
         }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        orderId?: string;
+        paymentPageUrl?: string;
+        error?: string;
+        needLogin?: boolean;
+        loginUrl?: string;
+      };
+      if (!res.ok || !body.ok || !body.paymentPageUrl) {
+        if (body.needLogin && body.loginUrl) {
+          setNeedLoginUrl(body.loginUrl);
+        }
         throw new Error(body.error ?? '提交失败，请稍后再试');
       }
-      const { leadId } = await res.json();
-      router.push(`/pricing/apply/success?leadId=${leadId}`);
+      router.push(body.paymentPageUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : '提交失败');
     } finally {
@@ -137,13 +147,15 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
       <div className="rounded-2xl border-2 border-[#00a0e9]/30 bg-[#00a0e9]/5 p-5">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00a0e9] text-white">
-            <Check className="h-4 w-4" />
+            <CreditCard className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-bold text-slate-900">您正在申请：999 元 AI 落地启动包</p>
+            <p className="text-sm font-bold text-slate-900">
+              下一步：在线微信支付 ¥999，立即激活账户
+            </p>
             <p className="mt-1 text-xs leading-5 text-slate-600">
-              所有客户的必经入口。包含免费 40-60 分钟顾问 1v1 诊断、《AI 落地路线图》PDF、50
-              credits 工具体验。所付 999 元 = AI 工具抵扣券，升级 2999 工具包时全额抵扣。
+              提交后立刻生成订单二维码 → 微信扫码付款 → 当场设置邮箱密码 → 自动进入工作台。
+              不需要等审批、不需要打款回单，全程不超过 3 分钟。
             </p>
           </div>
         </div>
@@ -179,6 +191,18 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
             </li>
           );
         })}
+        <li className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-slate-500">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-slate-500">
+            3
+          </span>
+          <span>支付 ¥999</span>
+        </li>
+        <li className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-slate-500">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-slate-500">
+            4
+          </span>
+          <span>设置密码</span>
+        </li>
       </ol>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -285,6 +309,9 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
                 placeholder="admin@example.com"
                 {...register('email')}
               />
+              <p className="text-xs text-slate-500">
+                付款完成后会用这个邮箱设置登录密码，请确保填写本人能收件的邮箱。
+              </p>
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
 
@@ -300,8 +327,16 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
-                {error}
+              <div className="space-y-2 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+                <div>{error}</div>
+                {needLoginUrl && (
+                  <Link
+                    href={needLoginUrl}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-red-900 underline hover:text-red-700"
+                  >
+                    点这里登录后再申请 →
+                  </Link>
+                )}
               </div>
             )}
           </div>
@@ -332,10 +367,10 @@ export function ApplyForm({ prefill }: { prefill?: Prefill }) {
             <Button
               type="submit"
               disabled={submitting}
-              className="min-w-[140px] rounded-xl bg-[#00a0e9] text-[#04122c] hover:bg-[#28b3f0]"
+              className="min-w-[180px] rounded-xl bg-[#00a0e9] text-[#04122c] hover:bg-[#28b3f0]"
             >
-              {submitting ? '提交中...' : '提交启动包申请'}
-              {!submitting && <CheckCircle2 className="ml-1 h-4 w-4" />}
+              {submitting ? '正在生成订单...' : '去支付 ¥999'}
+              {!submitting && <CreditCard className="ml-1.5 h-4 w-4" />}
             </Button>
           )}
         </div>

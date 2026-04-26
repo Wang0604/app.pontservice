@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, FileText, Gift, ReceiptText, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CreditCard, Gift, ReceiptText, ShieldCheck } from 'lucide-react';
 import { getCurrentSession } from '@/lib/auth/helpers';
 import { ApplyForm } from './apply-form';
 
@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic';
 
 const reasons = [
   {
-    icon: <FileText className="h-5 w-5" />,
-    title: '40-60 分钟拆透业务',
+    icon: <CreditCard className="h-5 w-5" />,
+    title: '在线微信扫码支付',
     description:
-      '把发票、合同、客服、获客、内容、流程逐项盘点，定位真正能用 AI 解决的具体场景。会议本身在话术与定价上都是免费的。',
+      '提交后立刻生成订单二维码，微信扫码即可付款。付完当场设置邮箱密码，自动进入工作台，不需要等任何审批。',
   },
   {
     icon: <Gift className="h-5 w-5" />,
@@ -22,7 +22,7 @@ const reasons = [
     icon: <ReceiptText className="h-5 w-5" />,
     title: '一份可执行 PDF 报告',
     description:
-      '不是聊一聊；交付的是《企业 AI 落地路线图》PDF，包含问题清单、优先级、推荐工具与上线节奏，可作为采购依据。',
+      '激活后顾问会主动联系约 40-60 分钟 1v1 诊断，并交付《AI 落地路线图》PDF（问题清单、优先级、推荐工具与上线节奏）。',
   },
   {
     icon: <ShieldCheck className="h-5 w-5" />,
@@ -33,12 +33,12 @@ const reasons = [
 ];
 
 const evidences = [
-  '40-60 分钟 1v1 远程会议',
+  '微信扫码 3 分钟付款',
+  '50 credits 立即到账',
+  '40-60 分钟 1v1 远程诊断',
   '《AI 落地路线图》PDF',
-  '会后 7 天微信答疑',
-  '50 credits 工具体验',
   '999 元 AI 工具抵扣券',
-  '电子合同 + 正规普票',
+  '正规增值税普通发票',
 ];
 
 export default async function ApplyPage() {
@@ -66,13 +66,13 @@ export default async function ApplyPage() {
           </Link>
 
           <span className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white/85">
-            申请 · 999 启动包是必经入口
+            微信扫码 · 3 分钟开通
           </span>
           <h1 className="mt-6 max-w-3xl text-balance text-4xl font-black leading-[1.06] tracking-[-0.045em] md:text-6xl">
-            支付 999，开启企业 AI 落地的第一步
+            提交 → 微信支付 999 → 设置密码 → 进入工作台
           </h1>
           <p className="mt-6 max-w-3xl text-pretty text-lg leading-8 text-white/70">
-            40-60 分钟资深顾问 1v1 诊断 + 《AI 落地路线图》PDF + 50 credits 工具体验，全部免费交付。
+            填一张简短表单，立刻生成订单二维码，微信扫码完成支付，当场设置登录密码——账号即开即用，不需要等任何人工审批。
             <br />
             <span className="mt-2 inline-block font-semibold text-white/90">
               所付 999 元在话术上是 AI 工具抵扣券——升级 2999 工具包时全额抵扣，等于一分钱没花就把完整诊断拿到手。
@@ -108,15 +108,15 @@ export default async function ApplyPage() {
         <div className="container max-w-3xl">
           <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm md:p-10">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-              Application
+              Checkout
             </p>
             <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] md:text-4xl">
-              填一张 AI 落地启动包申请，1 个工作日内回复
+              先付款，再开通账户 · 全程不超过 3 分钟
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
               {user
-                ? `已用 ${user.email} 登录，下方信息会自动预填。`
-                : '未登录也能提交，我们会通过邮件联系您；审批通过后自动创建账号。'}
+                ? `已用 ${user.email} 登录，下方信息会自动预填，付款完成即直接激活当前账户。`
+                : '提交后立刻生成微信扫码二维码，付款成功后在同一个页面设置登录密码，自动进入工作台。'}
             </p>
 
             <div className="mt-8">
@@ -138,7 +138,7 @@ export default async function ApplyPage() {
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-500">
-            提交后我们会用邮件、电话联系您；流程透明：审批 → 电子合同 → 999 对公打款 → 安排顾问诊断 → 出报告 → 30 天内可抵扣升级。
+            正确流程：填表 → 微信扫码付款 ¥999 → 设置邮箱密码 → 50 credits 立即到账 → 顾问主动联系约 1v1 诊断 → 交付路线图 PDF → 30 天内可抵扣升级。
           </p>
         </div>
       </section>
