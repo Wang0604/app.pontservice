@@ -191,6 +191,14 @@ function Hero() {
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           <Link
+            href="/pricing/quick-pay"
+            className="group inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-amber-300/40 bg-amber-300/10 px-7 py-3.5 text-sm font-bold text-amber-100 shadow-lg shadow-amber-500/10 transition hover:bg-amber-300/20"
+          >
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            迅速付款链接（包年免 Credits）
+            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          </Link>
+          <Link
             href="/pricing"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
           >
