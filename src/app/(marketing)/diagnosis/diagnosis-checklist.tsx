@@ -18,8 +18,9 @@ const questions = [
 function getResult(score: number) {
   if (score <= 1) {
     return {
-      title: '适合先观察，不急着上复杂 AI',
-      description: '当前痛点还不够集中，建议先记录一周重复工作，再决定是否购买诊断或工具。',
+      title: '可以先观察一阵',
+      description:
+        '当前痛点还不够集中，建议先记录一周重复工作；如果一周后命中条目变多，再申请 999 启动包做一次免费诊断。',
       action: '先看案例',
       href: '/cases',
     };
@@ -27,18 +28,20 @@ function getResult(score: number) {
 
   if (score <= 3) {
     return {
-      title: '适合从单点工具开始',
-      description: '你已经有明确的重复环节，可以先用 OCR 发票识别或轻量流程自动化验证 ROI。',
-      action: '查看工具包',
-      href: '/pricing',
+      title: '适合从启动包切入',
+      description:
+        '你已经有明确的重复环节，建议申请 999 启动包：免费诊断会议会帮你定位最值得做的 1-2 个 AI 场景，再决定升级 2999 工具包，999 元全额抵扣。',
+      action: '申请启动包',
+      href: '/pricing/apply',
     };
   }
 
   return {
-    title: '建议先做一次 999 诊断',
-    description: '痛点已经跨越多个流程，直接买工具容易分散。先拆出 1-2 个高回报场景，再落地更稳。',
-    action: '预约诊断',
-    href: '/pricing/apply?plan=999',
+    title: '建议先做 999 启动包',
+    description:
+      '痛点已经跨越多个流程，直接买工具容易分散。先用启动包做一次免费诊断，把 1-2 个高回报场景拆清楚再落地；999 元升级 2999 工具包时全额抵扣。',
+    action: '申请启动包',
+    href: '/pricing/apply',
   };
 }
 

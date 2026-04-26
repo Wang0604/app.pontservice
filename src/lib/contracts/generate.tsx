@@ -16,6 +16,10 @@ export async function generateContractPdf(params: {
     email: string;
     phone?: string | null;
   };
+  /** 升级订单的标准价；首单可省略，与 amountCny 相同 */
+  originalAmountCny?: number;
+  /** 升级订单的 999 抵扣金额；首单为 0 */
+  discountAmountCny?: number;
 }): Promise<{ pdf: Buffer; variables: ContractVariables; markdown: string }> {
   const variables = buildContractVariables(params);
   const markdown = await renderContractMarkdown(params.templateId, variables);

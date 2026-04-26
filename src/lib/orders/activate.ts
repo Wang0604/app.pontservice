@@ -10,6 +10,13 @@ import { emailProvider } from '@/lib/providers/email/resend';
 import { activationEmail } from '@/lib/providers/email/templates';
 import { auth } from '@/lib/auth/server';
 
+/**
+ * 「无限 credits」实际发放的额度。Postgres int 上限是 2^31-1 ≈ 21 亿，这里取 10 亿，
+ * 既能在表达 ≈ 无限 的同时给后续扣减留 1 亿次的空间。
+ */
+const UNLIMITED_CREDITS_GRANT = 1_000_000_000;
+const UNLIMITED_CREDITS_TAG = '[unlimited_credits]';
+
 export async function activateOrder(params: {
   orderId: string;
   adminUserId: string;
@@ -51,19 +58,34 @@ export async function activateOrder(params: {
     }
   }
 
+  const isUnlimited =
+    (order.notes ?? '').includes(UNLIMITED_CREDITS_TAG) ||
+    (lead?.notes ?? '').includes(UNLIMITED_CREDITS_TAG);
+  const creditsToGrant = isUnlimited ? UNLIMITED_CREDITS_GRANT : plan.credits;
+  const grantReason = isUnlimited
+    ? `订单 ${order.orderNumber} 激活发放（种子客户 · 无限 credits · ${plan.shortLabel}）`
+    : `订单 ${order.orderNumber} 激活发放（${plan.shortLabel}）`;
+
   await grantCredits({
     userId,
-    amount: plan.credits,
-    reason: `订单 ${order.orderNumber} 激活发放`,
+    amount: creditsToGrant,
+    reason: grantReason,
     orderId: order.id,
   });
+
+  // 升级订单的发票金额 = 客户为当前 plan 累计支付的总额（已抵扣金额 + 本次差额）。
+  // 对于直接激活的 999 启动包：discount 与 prior_paid 都是 0，invoiceTotal 等于 actualAmountCny。
+  const actualAmountCny = parseFloat(order.actualAmountCny);
+  const priorPaidCny = parseFloat(order.priorPaidAmountCny ?? '0');
+  const invoiceTotal = actualAmountCny + priorPaidCny;
+  const isUpgrade = priorPaidCny > 0;
 
   const invoicePdf = await generateInvoicePdf(
     buildInvoiceData({
       invoiceNumber: params.invoiceNumber,
       buyerName: lead.companyName,
-      totalAmount: parseFloat(order.actualAmountCny),
-      itemName: plan.label,
+      totalAmount: invoiceTotal,
+      itemName: isUpgrade ? `${plan.label}（含启动包抵扣）` : plan.label,
     }),
   );
   const invoiceKey = `invoices/${order.id}/${params.invoiceNumber}.pdf`;
@@ -81,7 +103,7 @@ export async function activateOrder(params: {
         paperworkStatus: 'activated',
         activatedAt: new Date(),
         paidAt: order.paidAt ?? new Date(),
-        creditsGranted: plan.credits,
+        creditsGranted: creditsToGrant,
         invoiceNumber: params.invoiceNumber,
         invoiceR2Key: invoiceKey,
         updatedAt: new Date(),
@@ -105,7 +127,7 @@ export async function activateOrder(params: {
     const { subject, html } = activationEmail({
       companyName: lead.companyName,
       orderNumber: order.orderNumber,
-      creditsGranted: plan.credits,
+      creditsGranted: creditsToGrant,
       loginUrl: `${appUrl}/login`,
     });
     await emailProvider.send({
@@ -140,5 +162,5 @@ export async function activateOrder(params: {
     }
   }
 
-  return { ok: true, userId, creditsGranted: plan.credits, invoiceKey };
+  return { ok: true, userId, creditsGranted: creditsToGrant, invoiceKey };
 }

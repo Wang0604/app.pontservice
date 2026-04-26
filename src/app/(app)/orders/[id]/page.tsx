@@ -48,9 +48,45 @@ export default async function OrderDetail({ params }: { params: { id: string } }
       <h1 className="mt-4 text-3xl font-bold">订单 {order.orderNumber}</h1>
       <p className="mt-2 text-muted-foreground">
         {getPlanShortLabel(order.planType)} · {formatYuan(parseFloat(order.actualAmountCny))}
+        {order.upgradedFromPlan && (
+          <span className="ml-2 inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
+            由 {getPlanShortLabel(order.upgradedFromPlan)} 升级
+          </span>
+        )}
       </p>
 
       <ProgressBar status={order.paperworkStatus} />
+
+      {parseFloat(order.discountAmountCny ?? '0') > 0 && (
+        <Card className="mt-6 border-emerald-200 bg-emerald-50/40">
+          <CardHeader>
+            <CardTitle className="text-base">本次升级费用明细</CardTitle>
+            <CardDescription>
+              您此前已支付 AI 落地启动包 ¥
+              {parseFloat(order.priorPaidAmountCny ?? '0').toLocaleString()}
+              ，按合同约定全额抵扣本次升级首期。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">套餐标准价</span>
+              <span className="font-mono">
+                {formatYuan(parseFloat(order.amountCny ?? order.actualAmountCny))}
+              </span>
+            </div>
+            <div className="flex justify-between text-emerald-700">
+              <span>启动包抵扣</span>
+              <span className="font-mono">
+                -{formatYuan(parseFloat(order.discountAmountCny ?? '0'))}
+              </span>
+            </div>
+            <div className="flex justify-between border-t pt-1 font-bold">
+              <span>本次需支付</span>
+              <span className="font-mono">{formatYuan(parseFloat(order.actualAmountCny))}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {contract && (
         <Card className="mt-6">

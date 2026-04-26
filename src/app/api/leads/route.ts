@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { z } from 'zod';
-import { db } from '@/lib/db';
-import { leads, orders } from '@/lib/db/schema';
-import { getCurrentSession } from '@/lib/auth/helpers';
-import { getPlan, PLAN_IDS } from '@/lib/pricing';
+import { PLAN_IDS } from '@/lib/pricing';
 import { emailProvider } from '@/lib/providers/email/resend';
 import { leadNotificationEmail } from '@/lib/providers/email/templates';
-import { generateOrderNumber } from '@/lib/utils';
+import { getSupabaseServiceClient } from '@/lib/supabase/server';
 
 const schema = z.object({
   companyName: z.string().min(2),
@@ -19,7 +17,35 @@ const schema = z.object({
   source: z.string().optional(),
 });
 
+function getBearerToken(req: NextRequest) {
+  const authorization = req.headers.get('authorization');
+  const match = authorization?.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim();
+}
+
+function isValidLeadApiToken(req: NextRequest) {
+  const expectedToken = process.env.LEADS_API_TOKEN;
+  const token = getBearerToken(req);
+
+  if (!expectedToken || !token) {
+    return false;
+  }
+
+  const tokenBuffer = Buffer.from(token);
+  const expectedBuffer = Buffer.from(expectedToken);
+
+  if (tokenBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(tokenBuffer, expectedBuffer);
+}
+
 export async function POST(req: NextRequest) {
+  if (!isValidLeadApiToken(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let payload: unknown;
   try {
     payload = await req.json();
@@ -36,43 +62,35 @@ export async function POST(req: NextRequest) {
   }
 
   const data = parsed.data;
-  const plan = getPlan(data.interestedPlan);
-  if (!plan) {
-    return NextResponse.json({ error: '套餐不存在' }, { status: 400 });
-  }
-
-  const session = await getCurrentSession();
-
-  const leadRow = await db.transaction(async (tx) => {
-    const [lead] = await tx
-      .insert(leads)
-      .values({
-        userId: session?.user.id,
-        companyName: data.companyName,
-        contactName: data.contactName,
+  let leadRow: { id: string };
+  try {
+    const supabase = getSupabaseServiceClient();
+    const { data: insertedLead, error: insertError } = await supabase
+      .from('leads')
+      .insert({
+        company_name: data.companyName,
+        contact_name: data.contactName,
         email: data.email,
-        phone: data.phone,
-        interestedPlan: data.interestedPlan,
-        useCase: data.useCase,
-        notes: data.notes,
+        phone: data.phone || null,
+        interested_plan: data.interestedPlan,
+        use_case: data.useCase || null,
+        notes: data.notes || null,
         source: data.source ?? 'website',
         status: 'new',
       })
-      .returning();
+      .select('id')
+      .single();
 
-    await tx.insert(orders).values({
-      orderNumber: generateOrderNumber(),
-      leadId: lead.id,
-      userId: session?.user.id,
-      planType: data.interestedPlan,
-      amountCny: plan.priceCny.toFixed(2),
-      actualAmountCny: plan.priceCny.toFixed(2),
-      earlyBird: false,
-      paperworkStatus: 'draft',
-    });
+    if (insertError || !insertedLead) {
+      console.error('[leads] supabase insert failed', insertError);
+      return NextResponse.json({ error: '保存失败' }, { status: 500 });
+    }
 
-    return lead;
-  });
+    leadRow = insertedLead;
+  } catch (err) {
+    console.error('[leads] supabase insert failed', err);
+    return NextResponse.json({ error: '保存失败' }, { status: 500 });
+  }
 
   try {
     const adminEmails = (process.env.RESEND_ADMIN_EMAIL ?? '')

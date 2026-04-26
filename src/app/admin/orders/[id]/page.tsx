@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders, leads, contracts, paymentReceipts } from '@/lib/db/schema';
 import { formatDate, formatYuan } from '@/lib/utils';
-import { getPlanShortLabel } from '@/lib/pricing';
+import { getPlan, getPlanShortLabel } from '@/lib/pricing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ActivationPanel } from './activation-panel';
 
@@ -25,6 +25,13 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
     .from(paymentReceipts)
     .where(eq(paymentReceipts.orderId, order.id));
 
+  const planDef = getPlan(order.planType);
+  const actualAmountCny = parseFloat(order.actualAmountCny);
+  const originalAmountCny = parseFloat(order.amountCny ?? order.actualAmountCny);
+  const discountAmountCny = parseFloat(order.discountAmountCny ?? '0');
+  const priorPaidAmountCny = parseFloat(order.priorPaidAmountCny ?? '0');
+  const isUpgrade = priorPaidAmountCny > 0;
+
   return (
     <div className="container max-w-4xl py-10">
       <Link href="/admin/orders" className="text-sm text-muted-foreground hover:underline">
@@ -33,7 +40,20 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
 
       <h1 className="mt-4 text-3xl font-bold">订单 {order.orderNumber}</h1>
       <p className="text-muted-foreground">
-        {getPlanShortLabel(order.planType)} · {formatYuan(parseFloat(order.actualAmountCny))}
+        {getPlanShortLabel(order.planType)} ·{' '}
+        {isUpgrade ? (
+          <span>
+            标准价 {formatYuan(originalAmountCny)} - 启动包抵扣 {formatYuan(discountAmountCny)} =
+            实付 {formatYuan(actualAmountCny)}
+          </span>
+        ) : (
+          formatYuan(actualAmountCny)
+        )}
+        {order.upgradedFromPlan && (
+          <span className="ml-2 inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
+            由 {getPlanShortLabel(order.upgradedFromPlan)} 升级
+          </span>
+        )}
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -44,8 +64,12 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
           <CardContent className="text-sm space-y-1">
             {lead ? (
               <>
-                <div><strong>{lead.companyName}</strong></div>
-                <div>{lead.contactName} · {lead.email}</div>
+                <div>
+                  <strong>{lead.companyName}</strong>
+                </div>
+                <div>
+                  {lead.contactName} · {lead.email}
+                </div>
                 {lead.phone && <div>电话: {lead.phone}</div>}
                 <div className="pt-2">
                   <Link href={`/admin/leads/${lead.id}`} className="text-primary hover:underline">
@@ -61,28 +85,87 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
 
         <Card>
           <CardHeader>
-            <CardTitle>合同</CardTitle>
+            <CardTitle>支付</CardTitle>
           </CardHeader>
           <CardContent className="text-sm space-y-1">
-            {contract ? (
-              <>
-                <div>状态: {contract.status}</div>
-                {contract.signedAt && <div>签署于: {formatDate(contract.signedAt)}</div>}
-                {contract.esignProvider && (
-                  <div>签署方: {contract.esignProvider}</div>
-                )}
-                <div className="pt-2">
-                  <Link href={`/api/contracts/${contract.id}/pdf`} target="_blank" className="text-primary hover:underline">
-                    查看 PDF →
-                  </Link>
-                </div>
-              </>
-            ) : (
-              <p className="text-muted-foreground">未生成合同</p>
-            )}
+            <div>支付方式: {order.paymentProvider ?? order.paymentMethod ?? '-'}</div>
+            <div>支付状态: {order.paymentStatus}</div>
+            {order.wechatOutTradeNo && <div>商户单号: {order.wechatOutTradeNo}</div>}
+            {order.wechatTransactionId && <div>微信支付交易号: {order.wechatTransactionId}</div>}
+            {order.paidAt && <div>启动包支付时间: {formatDate(order.paidAt)}</div>}
+            <div className="pt-2">
+              <Link href={`/pay/${order.id}`} target="_blank" className="text-primary hover:underline">
+                打开收款页 →
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* 升级订单专属：抵扣明细 */}
+      {isUpgrade && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>抵扣明细</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <table className="w-full">
+              <tbody>
+                <tr className="border-b">
+                  <td className="py-2 text-muted-foreground">套餐标准价</td>
+                  <td className="py-2 text-right font-mono">¥{originalAmountCny.toLocaleString()}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 text-muted-foreground">
+                    AI 落地启动包抵扣（前序已支付）
+                  </td>
+                  <td className="py-2 text-right font-mono text-emerald-700">
+                    -¥{discountAmountCny.toLocaleString()}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-bold">本次客户补差应付</td>
+                  <td className="py-2 text-right font-mono font-bold">
+                    ¥{actualAmountCny.toLocaleString()}
+                    {planDef?.billingCycle === 'monthly' && ' / 月'}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="mt-3 text-xs text-muted-foreground">
+              客户为本套餐累计支付 ¥{(priorPaidAmountCny + actualAmountCny).toLocaleString()}（含抵扣 ¥
+              {priorPaidAmountCny.toLocaleString()} + 本次 ¥{actualAmountCny.toLocaleString()}）。激活时按 {planDef?.shortLabel} 发放 credits。
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>合同</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-1">
+          {contract ? (
+            <>
+              <div>模板: {contract.templateId}</div>
+              <div>状态: {contract.status}</div>
+              {contract.signedAt && <div>签署于: {formatDate(contract.signedAt)}</div>}
+              {contract.esignProvider && <div>签署方: {contract.esignProvider}</div>}
+              <div className="pt-2">
+                <Link
+                  href={`/api/contracts/${contract.id}/pdf`}
+                  target="_blank"
+                  className="text-primary hover:underline"
+                >
+                  查看 PDF →
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground">未生成合同</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="mt-6">
         <CardHeader>
@@ -136,9 +219,12 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
           orderNumber={order.orderNumber}
           customerEmail={lead?.email ?? ''}
           customerCompany={lead?.companyName ?? ''}
-          amountCny={parseFloat(order.actualAmountCny)}
+          amountCny={actualAmountCny}
+          originalAmountCny={originalAmountCny}
+          discountAmountCny={discountAmountCny}
           currentStatus={order.paperworkStatus}
           receiptCount={receipts.length}
+          planLabel={planDef?.shortLabel ?? order.planType}
         />
       </div>
     </div>

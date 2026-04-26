@@ -35,8 +35,7 @@ export default function DiagnosisPage() {
         </div>
         <h1 className="text-4xl font-bold tracking-tight md:text-5xl">先判断 AI 值不值得做，再决定买什么</h1>
         <p className="mt-5 text-lg text-muted-foreground">
-          这份自测帮助老板快速看清：当前业务更适合先做 OCR 自动化、获客内容诊断，还是先约一次 999
-          诊断把流程拆明白。
+          这份自测帮助老板快速看清：当前业务更适合先观察一阵，还是直接申请 999 启动包，把流程拆明白后再决定升级工具包。
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link

@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { leads, orders } from '@/lib/db/schema';
 import { formatDate } from '@/lib/utils';
-import { getPlan, getPlanShortLabel, type PlanId } from '@/lib/pricing';
+import { ENTRY_PLAN_ID, getPlan, getPlanShortLabel, type PlanId } from '@/lib/pricing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LeadApprovalPanel } from './approval-panel';
 
@@ -15,13 +15,20 @@ export default async function AdminLeadDetail({ params }: { params: { id: string
   if (leadRows.length === 0) return notFound();
   const lead = leadRows[0];
 
-  const orderRows = await db
-    .select()
-    .from(orders)
-    .where(eq(orders.leadId, lead.id))
-    .limit(1);
+  const orderRows = await db.select().from(orders).where(eq(orders.leadId, lead.id)).limit(1);
   const order = orderRows[0];
-  const plan = getPlan(lead.interestedPlan);
+
+  // 客户提交时的"意向" plan 仅作为参考记录；实际首单永远是 999 启动包。
+  const interestedPlan = (lead.interestedPlan as PlanId) ?? ENTRY_PLAN_ID;
+  const currentPlan = (order?.planType as PlanId | undefined) ?? ENTRY_PLAN_ID;
+  const currentPlanDef = getPlan(currentPlan);
+
+  const actualAmountCny = order ? parseFloat(order.actualAmountCny) : 0;
+  const originalAmountCny = order
+    ? parseFloat(order.amountCny ?? order.actualAmountCny ?? '0')
+    : 0;
+  const discountAmountCny = order ? parseFloat(order.discountAmountCny ?? '0') : 0;
+  const priorPaidAmountCny = order ? parseFloat(order.priorPaidAmountCny ?? '0') : 0;
 
   return (
     <div className="container max-w-4xl py-10">
@@ -42,14 +49,11 @@ export default async function AdminLeadDetail({ params }: { params: { id: string
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div>
-              <span className="font-medium">意向套餐：</span>
+              <span className="font-medium">客户提交时的意向：</span>
               {getPlanShortLabel(lead.interestedPlan)}
-              {plan && (
-                <span className="text-muted-foreground">
-                  （标准价 ¥{plan.priceCny}
-                  {plan.billingCycle === 'monthly' ? ' / 月' : ''}）
-                </span>
-              )}
+              <span className="ml-2 text-xs text-muted-foreground">
+                （仅作参考，实际首单按 999 启动包走）
+              </span>
             </div>
             <div>
               <span className="font-medium">提交时间：</span>
@@ -78,20 +82,52 @@ export default async function AdminLeadDetail({ params }: { params: { id: string
           <CardHeader>
             <CardTitle>订单</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm">
+          <CardContent className="text-sm space-y-1.5">
             {order ? (
               <>
-                <div className="mb-2 font-mono text-xs text-muted-foreground">
+                <div className="font-mono text-xs text-muted-foreground">
                   {order.orderNumber}
                 </div>
-                <div>
-                  金额: ¥{parseFloat(order.actualAmountCny).toLocaleString()}
-                  {plan?.billingCycle === 'monthly' ? ' / 月' : ''}
+                <div className="pt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                  当前 Plan
                 </div>
-                <div>状态: {order.paperworkStatus}</div>
+                <div className="font-bold">
+                  {currentPlanDef?.shortLabel ?? currentPlan}
+                  {order.upgradedFromPlan && (
+                    <span className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                      由 {getPlanShortLabel(order.upgradedFromPlan)} 升级
+                    </span>
+                  )}
+                </div>
+
+                <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  金额
+                </div>
+                {discountAmountCny > 0 ? (
+                  <div className="font-mono text-xs leading-5">
+                    标准价 ¥{originalAmountCny.toLocaleString()}
+                    <br />
+                    抵扣 -¥{discountAmountCny.toLocaleString()}
+                    <br />
+                    实付 ¥{actualAmountCny.toLocaleString()}
+                    {currentPlanDef?.billingCycle === 'monthly' && ' / 月'}
+                  </div>
+                ) : (
+                  <div className="font-mono">
+                    ¥{actualAmountCny.toLocaleString()}
+                    {currentPlanDef?.billingCycle === 'monthly' && ' / 月'}
+                  </div>
+                )}
+
+                <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  状态
+                </div>
+                <div>
+                  {order.paperworkStatus} · {order.paymentStatus}
+                </div>
               </>
             ) : (
-              <p className="text-muted-foreground">无关联订单</p>
+              <p className="text-muted-foreground">无关联订单（点击下方按钮生成首单）</p>
             )}
           </CardContent>
         </Card>
@@ -101,11 +137,18 @@ export default async function AdminLeadDetail({ params }: { params: { id: string
         <LeadApprovalPanel
           leadId={lead.id}
           orderId={order?.id}
+          orderNumber={order?.orderNumber}
           currentLeadStatus={lead.status}
           currentPaperworkStatus={order?.paperworkStatus ?? 'draft'}
-          currentAmount={parseFloat(order?.actualAmountCny ?? '0')}
+          currentPaymentStatus={order?.paymentStatus ?? 'unpaid'}
+          currentActualAmountCny={actualAmountCny}
+          currentPlan={currentPlan}
+          originalAmountCny={originalAmountCny}
+          discountAmountCny={discountAmountCny}
+          priorPaidAmountCny={priorPaidAmountCny}
+          upgradedFromPlan={order?.upgradedFromPlan ?? null}
           currentContractId={order?.contractId ?? null}
-          planId={lead.interestedPlan as PlanId}
+          leadInterestedPlan={interestedPlan}
         />
       </div>
     </div>

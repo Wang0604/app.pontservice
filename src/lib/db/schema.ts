@@ -219,9 +219,25 @@ export const orders = pgTable(
     amountCny: numeric('amount_cny', { precision: 10, scale: 2 }).notNull(),
     earlyBird: boolean('early_bird').notNull().default(false),
     actualAmountCny: numeric('actual_amount_cny', { precision: 10, scale: 2 }).notNull(),
+    /** 999 启动包升级到 2999/9999 时记录的抵扣金额（默认 0） */
+    discountAmountCny: numeric('discount_amount_cny', { precision: 10, scale: 2 })
+      .notNull()
+      .default('0'),
+    /** 升级前已经支付过的金额（999 启动包付款后再升级时使用） */
+    priorPaidAmountCny: numeric('prior_paid_amount_cny', { precision: 10, scale: 2 })
+      .notNull()
+      .default('0'),
+    /** 如果这一单是从某个 plan 升级而来，记录原 plan id；为 null 表示首次创建 */
+    upgradedFromPlan: text('upgraded_from_plan'),
     paperworkStatus: text('paperwork_status').notNull().default('draft'),
     contractId: uuid('contract_id'),
     paymentMethod: text('payment_method').default('bank_transfer'),
+    paymentProvider: text('payment_provider').default('manual'),
+    paymentStatus: text('payment_status').notNull().default('unpaid'),
+    paymentQrCodeUrl: text('payment_qr_code_url'),
+    paymentExpiresAt: timestamp('payment_expires_at', { withTimezone: true }),
+    wechatOutTradeNo: text('wechat_out_trade_no').unique(),
+    wechatTransactionId: text('wechat_transaction_id'),
     paidAt: timestamp('paid_at', { withTimezone: true }),
     activatedAt: timestamp('activated_at', { withTimezone: true }),
     creditsGranted: integer('credits_granted'),
@@ -290,7 +306,7 @@ export const paymentReceipts = pgTable(
 
 /**
  * ============================================================
- * Stage 1/2 预留：外部支付 webhook 事件（Stripe / 微信 / 支付宝）
+ * Stage 1/2 预留：外部支付 webhook 事件（Stripe / 微信）
  * Stage 0 只建表，不使用
  * ============================================================
  */
@@ -372,6 +388,9 @@ export const PAPERWORK_STATUSES = [
   'cancelled',
 ] as const;
 export type PaperworkStatus = (typeof PAPERWORK_STATUSES)[number];
+
+export const PAYMENT_STATUSES = ['unpaid', 'pending', 'paid', 'closed', 'failed'] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 export const CONTRACT_STATUSES = ['draft', 'approved', 'sent', 'viewing', 'signed', 'voided'] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];

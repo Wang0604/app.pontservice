@@ -2,85 +2,110 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Sparkles } from 'lucide-react';
 
 const stats = [
-  { value: '999', label: '元起步诊断', sub: '一次性付费' },
-  { value: '60', label: '分钟可执行报告', sub: '远程 1v1' },
-  { value: '100%', label: '抵扣首期', sub: '诊断后 30 天内' },
-  { value: '对公', label: '合同 / 正规发票', sub: '可财务报销' },
+  { value: '999', label: '元 AI 落地启动包', sub: '一次性付款' },
+  { value: '免费', label: '40-60 分钟咨询', sub: '资深顾问 1v1' },
+  { value: '100%', label: '抵扣后续工具包', sub: '30 天内升级' },
+  { value: '对公', label: '合同 + 正规发票', sub: '可财务报销' },
 ];
 
+// 痛点 + 愿景叙事块
+const visionPoints = [
+  {
+    eyebrow: 'Why now',
+    title: '大企业转型慢，中小企业其实有窗口',
+    description:
+      '大型企业从信息化到 AI 的过渡周期普遍 18-36 个月——预算长、决策慢、工具堆叠厚。中小企业反而能更快地拍板、上线、迭代，关键是把第一步的方向定对。',
+  },
+  {
+    eyebrow: 'Our mission',
+    title: '助力中小企业全面实现 AI 落地与转型',
+    description:
+      '不要求客户必须先做完数字化才能用 AI。无论你已有 ERP、CRM 等数字化基础，还是仍以 Excel + 微信跑业务，我们都能从你现在的起点出发，给出可执行的 AI 落地路径。',
+  },
+  {
+    eyebrow: 'How it lands',
+    title: '工具 + 顾问 + 合同发票，一次跑通',
+    description:
+      'OCR / SEO / GEO 工具 + 远程诊断 + 1v1 顾问陪跑，配合电子合同与正规发票，从第一天起就符合企业财务与采购流程。',
+  },
+];
+
+// 启动包流程：先付 → 免费咨询 → 抵扣升级
 const path = [
   {
     step: '01',
-    label: 'Diagnose',
-    title: '999 诊断',
-    description: '60 分钟远程把业务问题、数据来源和落地边界讲清楚，输出一份可执行 PDF 报告。',
-    cta: '预约诊断',
-    href: '/pricing/apply?plan=999',
+    label: 'Activate',
+    title: '999 启动包',
+    description:
+      '一次性支付 999 元，立刻进入企业 AI 落地通道：免费 40-60 分钟顾问咨询 + 50 credits 工具体验 + AI 工具抵扣券。',
+    cta: '申请启动包',
+    href: '/pricing/apply',
   },
   {
     step: '02',
-    label: 'Credit',
-    title: '抵扣升级',
+    label: 'Diagnose',
+    title: '免费诊断会议',
     description:
-      '诊断后 30 天内升级 2999 工具包或 9999 增长陪跑时，已支付的 999 元全额抵扣首期费用。',
-    cta: '查看抵扣规则',
-    href: '/pricing',
+      '40-60 分钟远程 1v1，把发票、合同、客服、获客、内容等环节挨个拆开，输出一份《企业 AI 落地路线图》PDF。会议本身在话术与定价上都是免费的。',
+    cta: '了解诊断内容',
+    href: '/diagnosis',
   },
   {
     step: '03',
-    label: 'Choose',
-    title: '选择落地路径',
-    description: '工具包按月跑通 OCR / SEO / GEO；增长陪跑额外配人，把 Prompt 与流程一起跑通。',
-    cta: '比较套餐',
+    label: 'Upgrade',
+    title: '抵扣升级工具包',
+    description:
+      '30 天内决定升级 2999 工具包或 9999 增长陪跑，已支付的 999 元全额抵扣首期。结果上等于一分钱没花就拿到了完整的 AI 落地诊断。',
+    cta: '看抵扣规则',
     href: '/pricing',
   },
 ];
 
-const plans = [
+const offerings = [
   {
     id: '999',
-    name: '诊断',
-    tagline: '判断 AI 值不值得做',
+    name: 'AI 落地启动包',
+    tagline: '所有客户的必经第一步',
     price: '¥999',
     cycle: '一次性',
     bullets: [
-      '60 分钟远程 1v1 会议',
-      '可执行 PDF 诊断报告',
-      '会后 7 天微信答疑',
-      '50 credits 体验工具',
+      '免费 40-60 分钟顾问诊断',
+      '《企业 AI 落地路线图》PDF',
+      '50 credits 工具体验',
+      '999 元 AI 工具抵扣券',
     ],
-    highlight: false,
-    href: '/pricing/apply?plan=999',
+    highlight: true,
+    href: '/pricing/apply',
   },
   {
     id: '2999',
-    name: '工具包',
-    tagline: '已经知道要用什么',
+    name: 'AI 工具 SaaS 订阅',
+    tagline: '诊断后按月解锁完整工具',
     price: '¥2999',
     cycle: '/ 月',
     bullets: [
+      '完整 OCR / SEO / GEO 工具',
       '每月 200 credits',
-      'OCR / SEO / GEO 工具',
-      '999 诊断可抵首期',
-      'SLA 月度可用率 > 99%',
+      '999 启动包全额抵扣首期',
+      '首月只补差 ¥2000',
     ],
-    highlight: true,
-    href: '/pricing/apply?plan=2999',
+    highlight: false,
+    href: '/pricing',
   },
   {
     id: '9999',
-    name: '增长陪跑',
-    tagline: '需要人陪着把流程跑通',
+    name: 'AI 增长陪跑包',
+    tagline: '工具 + 专项诊断 + 顾问陪跑',
     price: '¥9999',
     cycle: '/ 月',
     bullets: [
       '工具包全部权益',
-      '每月 500 credits',
-      '月度专项诊断 + Prompt 调优',
-      '999 诊断可抵首期',
+      '每月 500 credits + 专项诊断',
+      '999 启动包全额抵扣首期',
+      '首月只补差 ¥9000',
     ],
     highlight: false,
-    href: '/pricing/apply?plan=9999',
+    href: '/pricing',
   },
 ];
 
@@ -115,8 +140,9 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <VisionSection />
       <PathSection />
-      <PricingSection />
+      <OfferingSection />
       <ToolsSection />
       <ClosingCta />
     </>
@@ -141,29 +167,34 @@ function Hero() {
       <div className="container relative max-w-6xl py-20 md:py-28">
         <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white/85">
           <Sparkles className="h-3.5 w-3.5 text-[#00a0e9]" />
-          PONT·AI workspace
+          PONT·AI · 助力中小企业 AI 落地
         </span>
         <h1 className="mt-7 max-w-4xl text-balance text-5xl font-black leading-[1.02] tracking-[-0.045em] text-white md:text-7xl">
-          为中小企业老板，
-          <br className="hidden md:block" />把 AI 落到合同、发票、流程里。
+          中小企业的 AI 落地，
+          <br className="hidden md:block" />
+          从 999 元启动包开始。
         </h1>
         <p className="mt-7 max-w-2xl text-pretty text-lg leading-8 text-white/70">
-          先用 999 诊断把问题看清楚，再用 OCR、SEO / GEO
-          等工具按需上线。合同、发票、对公付款和人工审核都在同一套交付流程里。
+          大企业从数字化转型到 AI 普遍要走 18-36 个月，慢且贵。我们专注扶持中小企业——
+          无论你已有数字化基础，还是仍在 Excel + 微信里跑业务，都能从 999 元启动包跑通第一步。
+          <br />
+          <span className="mt-2 inline-block font-semibold text-white/90">
+            支付 999 元，免费获得 40-60 分钟顾问诊断 + AI 工具抵扣券，升级工具包时全额抵扣，等于一分钱没花就把完整诊断拿到手。
+          </span>
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link
-            href="/pricing/apply?plan=999"
+            href="/pricing/apply"
             className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-[#00a0e9] px-7 py-3.5 text-sm font-bold text-[#04122c] shadow-lg shadow-[#00a0e9]/25 transition hover:bg-[#28b3f0]"
           >
-            999 元先做诊断
+            申请 999 启动包
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           <Link
             href="/pricing"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
           >
-            对比三档套餐
+            看完整服务结构
           </Link>
           <Link
             href="/diagnosis"
@@ -190,6 +221,44 @@ function Hero() {
   );
 }
 
+function VisionSection() {
+  return (
+    <section className="relative bg-[#070b1c] text-white">
+      <div className="container max-w-6xl pb-24">
+        <div className="border-t border-white/10 pt-20">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-white/45">
+                Vision &amp; Pain Point
+              </p>
+              <h2 className="mt-3 text-3xl font-black leading-[1.08] tracking-[-0.04em] md:text-5xl">
+                我们只服务中小企业。
+                <br className="hidden md:block" />
+                因为大企业转型已经太晚、太慢。
+              </h2>
+            </div>
+            <p className="max-w-md text-sm leading-7 text-white/60">
+              企业级 AI 落地不该只是大厂的故事。Pontai 的使命是把"诊断 + 工具 + 陪跑"做成一条对中小企业老板友好的标准链路。
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 lg:grid-cols-3">
+            {visionPoints.map((p) => (
+              <div key={p.title} className="flex flex-col gap-4 bg-[#070b1c]/95 p-8">
+                <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#00a0e9]">
+                  {p.eyebrow}
+                </span>
+                <h3 className="text-2xl font-black tracking-[-0.04em] text-white">{p.title}</h3>
+                <p className="text-sm leading-7 text-white/65">{p.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PathSection() {
   return (
     <section className="relative bg-[#070b1c] text-white">
@@ -201,12 +270,12 @@ function PathSection() {
                 Workflow
               </p>
               <h2 className="mt-3 text-3xl font-black leading-[1.08] tracking-[-0.04em] md:text-5xl">
-                不是直接卖工具，是先用 999 把购买路径定下来
+                999 元启动 → 免费诊断 → 抵扣升级
               </h2>
             </div>
             <p className="max-w-md text-sm leading-7 text-white/60">
-              客户先用 999 诊断降低决策风险；诊断后如果继续购买工具包或陪跑，已支付的 999
-              元自动抵扣首期，避免重复付费。
+              第一步必经 999 启动包，咨询服务和路线图全部免费交付；这 999 元等同于一张
+              AI 工具抵扣券——升级 2999 工具包时全额扣除，等于一分钱没花。
             </p>
           </div>
 
@@ -238,24 +307,24 @@ function PathSection() {
   );
 }
 
-function PricingSection() {
+function OfferingSection() {
   return (
     <section className="bg-[#f4f6fb] py-24 text-slate-900">
       <div className="container max-w-6xl">
         <div className="flex flex-col gap-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
-            Pricing
+            What You Get
           </p>
           <h2 className="max-w-2xl text-3xl font-black leading-[1.08] tracking-[-0.04em] md:text-5xl">
-            三档服务，一条升级链路
+            一条完整链路：启动包 → 工具包 → 增长包
           </h2>
           <p className="max-w-2xl text-sm leading-7 text-slate-600">
-            999 诊断是入口，购买工具包或增长陪跑时全额抵扣，所有套餐都走对公合同 + 正规发票。
+            首单永远是 999 启动包；客户跑完免费诊断会议后，再自主决定是否升级到工具包或增长陪跑。所有套餐都走对公合同 + 正规发票。
           </p>
         </div>
 
         <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          {plans.map((plan) => (
+          {offerings.map((plan) => (
             <Link
               key={plan.id}
               href={plan.href}
@@ -267,7 +336,7 @@ function PricingSection() {
             >
               {plan.highlight && (
                 <span className="absolute -top-3 left-7 inline-flex items-center rounded-full bg-[#00a0e9] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#04122c]">
-                  Most-picked
+                  Start here
                 </span>
               )}
               <div>
@@ -302,7 +371,7 @@ function PricingSection() {
                     : 'mt-2 inline-flex items-center gap-2 text-sm font-bold text-slate-900'
                 }
               >
-                立即申请
+                {plan.highlight ? '立即申请启动包' : '在启动包后升级'}
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </span>
             </Link>
@@ -323,8 +392,7 @@ function ToolsSection() {
             同一套 credits，跑通工具矩阵
           </h2>
           <p className="max-w-2xl text-sm leading-7 text-white/60">
-            先把 OCR 发票识别用起来验证 ROI，再按节奏接入 SEO 诊断、GEO
-            诊断，工具之间共用同一个账户。
+            先用 OCR 发票识别验证 ROI，再按节奏接入 SEO 诊断、GEO 诊断；工具之间共用同一套账户与 credits。
           </p>
         </div>
 
@@ -364,18 +432,18 @@ function ClosingCta() {
                 Start here
               </p>
               <h3 className="mt-3 text-3xl font-black tracking-[-0.04em] md:text-4xl">
-                先 999 诊断一次，把买什么定下来
+                999 元锁定企业 AI 落地的第一步
               </h3>
               <p className="mt-4 text-sm leading-7 text-white/70">
-                花一杯咖啡的时间填表单，1 个工作日内审核。电子合同 + 对公打款 + 30 天内升级抵扣。
+                填一张表，1 个工作日内回复。免费 40-60 分钟顾问咨询、《AI 落地路线图》PDF、50 credits 工具体验，工具包升级时 999 元全额抵扣。
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row md:flex-col md:items-end">
               <Link
-                href="/pricing/apply?plan=999"
+                href="/pricing/apply"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#00a0e9] px-7 py-3.5 text-sm font-bold text-[#04122c] shadow-lg shadow-[#00a0e9]/25 transition hover:bg-[#28b3f0]"
               >
-                申请 999 诊断
+                申请 999 启动包
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link

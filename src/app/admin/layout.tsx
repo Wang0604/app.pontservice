@@ -24,6 +24,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/orders" className="hover:text-primary">
                 订单
               </Link>
+              <Link
+                href="/admin/quick-orders/new"
+                className="rounded-full bg-primary/10 px-3 py-1 text-primary hover:bg-primary/20"
+              >
+                快速收款 +
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm">

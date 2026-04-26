@@ -37,6 +37,11 @@ export const generateContractPdfFunction = inngest.createFunction(
 
     const key = `contracts/${contract.id}/v1-${Date.now()}.pdf`;
 
+    // 升级订单（999 → 2999/9999）需要在合同里显示原价、抵扣金额、前序订单号。
+    // 首单订单 discountAmountCny=0，模板使用 amount 即可；这里都填上保险。
+    const discountAmountCny = parseFloat(order.discountAmountCny ?? '0');
+    const isUpgrade = discountAmountCny > 0;
+
     // Buffer can't cross step boundaries via JSON serialization, so we
     // render + upload in one step and only return the key.
     const pdfKey = await step.run('render and upload pdf', async () => {
@@ -52,6 +57,8 @@ export const generateContractPdfFunction = inngest.createFunction(
           email: lead.email,
           phone: lead.phone,
         },
+        originalAmountCny: isUpgrade ? plan.priceCny : parseFloat(order.actualAmountCny),
+        discountAmountCny,
       });
       await storageProvider.putObject({
         key,

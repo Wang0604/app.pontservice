@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Check, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PLANS, PLAN_IDS, type PlanId } from '@/lib/pricing';
+import { ENTRY_PLAN_ID } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,7 @@ const PAIN_POINTS = [
   { id: 'tools', label: '已经在用某些 AI 工具，但没融入流程' },
   { id: 'rivals', label: '同行已经在用 AI，担心被甩开' },
   { id: 'workflow', label: '业务流程长，需要人工串联多个系统' },
+  { id: 'no_digital', label: '还没做完数字化，担心 AI 上不去' },
 ];
 
 const PAIN_POINT_LABEL = new Map(PAIN_POINTS.map((p) => [p.id, p.label]));
@@ -28,7 +29,6 @@ const PAIN_POINT_LABEL = new Map(PAIN_POINTS.map((p) => [p.id, p.label]));
 const applySchema = z.object({
   painPoints: z.array(z.string()).min(1, '至少选一个'),
   goal: z.string().min(8, '说说想解决什么具体问题（至少 8 个字）').max(500),
-  interestedPlan: z.enum(PLAN_IDS),
   companyName: z.string().min(2, '公司名至少 2 个字'),
   contactName: z.string().min(1, '必填'),
   email: z.string().email('邮箱格式不对'),
@@ -47,11 +47,10 @@ interface Prefill {
 
 const STEPS: { id: string; title: string; fields: (keyof ApplyInput)[] }[] = [
   { id: 'diagnose', title: '业务自检', fields: ['painPoints', 'goal'] },
-  { id: 'plan', title: '选择服务', fields: ['interestedPlan'] },
   { id: 'contact', title: '联系方式', fields: ['companyName', 'contactName', 'email', 'phone'] },
 ];
 
-export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefill?: Prefill }) {
+export function ApplyForm({ prefill }: { prefill?: Prefill }) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -69,7 +68,6 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
     defaultValues: {
       painPoints: [],
       goal: '',
-      interestedPlan: defaultPlan,
       email: prefill?.email ?? '',
       contactName: prefill?.name ?? '',
       companyName: prefill?.companyName ?? '',
@@ -78,7 +76,6 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
     },
   });
 
-  const selectedPlan = watch('interestedPlan');
   const painPoints = watch('painPoints') ?? [];
 
   function togglePainPoint(id: string) {
@@ -117,7 +114,7 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
           contactName: data.contactName,
           email: data.email,
           phone: data.phone,
-          interestedPlan: data.interestedPlan,
+          interestedPlan: ENTRY_PLAN_ID,
           useCase,
           notes: data.notes,
         }),
@@ -137,6 +134,21 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
 
   return (
     <div className="space-y-8">
+      <div className="rounded-2xl border-2 border-[#00a0e9]/30 bg-[#00a0e9]/5 p-5">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00a0e9] text-white">
+            <Check className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-slate-900">您正在申请：999 元 AI 落地启动包</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">
+              所有客户的必经入口。包含免费 40-60 分钟顾问 1v1 诊断、《AI 落地路线图》PDF、50
+              credits 工具体验。所付 999 元 = AI 工具抵扣券，升级 2999 工具包时全额抵扣。
+            </p>
+          </div>
+        </div>
+      </div>
+
       <ol className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]">
         {STEPS.map((s, i) => {
           const done = i < currentStep;
@@ -177,7 +189,7 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
                 你的业务里，下面这些情况存在吗？
               </Label>
               <p className="text-sm leading-6 text-slate-500">
-                勾选所有命中的项目，作为 999 诊断会议时的对照清单；至少选一个。
+                勾选所有命中的项目，作为顾问准备启动包诊断会议时的对照清单；至少选一个。
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {PAIN_POINTS.map((p) => {
@@ -234,87 +246,6 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
         {currentStep === 1 && (
           <div className="animate-in fade-in slide-in-from-right-4 space-y-5 duration-500">
             <div className="space-y-2">
-              <Label className="text-base font-bold text-slate-900">您希望从哪一档开始？</Label>
-              <p className="text-sm leading-6 text-slate-500">
-                推荐先选 999 诊断；如果已经明确要用工具，可以直接选 2999 / 9999，已购买的 999
-                元全额抵扣首期。
-              </p>
-            </div>
-            <div className="grid gap-3">
-              {PLANS.map((plan) => {
-                const checked = selectedPlan === plan.id;
-                const recommended = plan.id === '999';
-                return (
-                  <label
-                    key={plan.id}
-                    className={
-                      checked
-                        ? 'flex cursor-pointer items-start gap-4 rounded-2xl border-2 border-[#070b1c] bg-[#070b1c] p-5 text-white transition'
-                        : 'flex cursor-pointer items-start gap-4 rounded-2xl border-2 border-slate-200 bg-white p-5 text-slate-900 transition hover:border-slate-300'
-                    }
-                  >
-                    <input
-                      type="radio"
-                      value={plan.id}
-                      {...register('interestedPlan')}
-                      className="sr-only"
-                    />
-                    <span
-                      className={
-                        checked
-                          ? 'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#00a0e9] text-white'
-                          : 'mt-1 h-5 w-5 shrink-0 rounded-full border-2 border-slate-300'
-                      }
-                    >
-                      {checked && <Check className="h-3 w-3" />}
-                    </span>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="text-lg font-extrabold tracking-tight">
-                          {plan.shortLabel}
-                        </span>
-                        {recommended && (
-                          <span
-                            className={
-                              checked
-                                ? 'rounded-full bg-[#00a0e9] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#04122c]'
-                                : 'rounded-full bg-[#00a0e9]/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#0a6ea3]'
-                            }
-                          >
-                            Recommended
-                          </span>
-                        )}
-                      </div>
-                      <p
-                        className={
-                          checked ? 'mt-1 text-sm text-white/75' : 'mt-1 text-sm text-slate-600'
-                        }
-                      >
-                        {plan.tagline}
-                      </p>
-                      {plan.id !== '999' && (
-                        <p
-                          className={
-                            checked ? 'mt-2 text-xs text-[#00a0e9]' : 'mt-2 text-xs text-[#0a6ea3]'
-                          }
-                        >
-                          已购买 999 诊断的客户，可全额抵扣首期 999 元
-                        </p>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-            {errors.interestedPlan && (
-              <p className="text-xs text-destructive">{errors.interestedPlan.message}</p>
-            )}
-          </div>
-        )}
-
-        {currentStep === 2 && (
-          <div className="animate-in fade-in slide-in-from-right-4 space-y-5 duration-500">
-            <div className="space-y-2">
               <Label htmlFor="companyName">
                 公司全称 <span className="text-destructive">*</span>
               </Label>
@@ -361,7 +292,7 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
               <Label htmlFor="notes">补充备注（可选）</Label>
               <Textarea
                 id="notes"
-                placeholder="预约时段偏好 / 来源渠道 / 期望产出等"
+                placeholder="预约时段偏好 / 来源渠道 / 是否已有数字化基础 / 期望产出等"
                 rows={3}
                 className="resize-none"
                 {...register('notes')}
@@ -403,7 +334,7 @@ export function ApplyForm({ defaultPlan, prefill }: { defaultPlan: PlanId; prefi
               disabled={submitting}
               className="min-w-[140px] rounded-xl bg-[#00a0e9] text-[#04122c] hover:bg-[#28b3f0]"
             >
-              {submitting ? '提交中...' : '提交申请'}
+              {submitting ? '提交中...' : '提交启动包申请'}
               {!submitting && <CheckCircle2 className="ml-1 h-4 w-4" />}
             </Button>
           )}

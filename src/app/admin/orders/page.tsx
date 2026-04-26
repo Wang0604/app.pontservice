@@ -30,8 +30,13 @@ export default async function AdminOrdersPage({
       id: orders.id,
       orderNumber: orders.orderNumber,
       planType: orders.planType,
+      upgradedFromPlan: orders.upgradedFromPlan,
       amount: orders.actualAmountCny,
+      originalAmount: orders.amountCny,
+      discountAmount: orders.discountAmountCny,
       paperworkStatus: orders.paperworkStatus,
+      paymentStatus: orders.paymentStatus,
+      paymentProvider: orders.paymentProvider,
       createdAt: orders.createdAt,
       leadCompany: leads.companyName,
       leadContact: leads.contactName,
@@ -62,6 +67,7 @@ export default async function AdminOrdersPage({
               <th className="p-3">客户</th>
               <th className="p-3">套餐</th>
               <th className="p-3">金额</th>
+              <th className="p-3">支付</th>
               <th className="p-3">状态</th>
               <th className="p-3">时间</th>
               <th className="p-3" />
@@ -70,35 +76,62 @@ export default async function AdminOrdersPage({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                <td colSpan={8} className="p-6 text-center text-muted-foreground">
                   暂无数据
                 </td>
               </tr>
             ) : (
-              rows.map((o) => (
-                <tr key={o.id} className="border-b last:border-0 hover:bg-muted/30">
-                  <td className="p-3 font-mono text-xs">{o.orderNumber}</td>
-                  <td className="p-3">
-                    <div>{o.leadCompany ?? '-'}</div>
-                    <div className="text-xs text-muted-foreground">{o.leadContact} · {o.leadEmail}</div>
-                  </td>
-                  <td className="p-3">{getPlanShortLabel(o.planType)}</td>
-                  <td className="p-3">
-                    {formatYuan(parseFloat(o.amount))}
-                  </td>
-                  <td className="p-3">
-                    <span className="rounded bg-muted px-2 py-0.5 text-xs">
-                      {STATUS_LABELS[o.paperworkStatus] ?? o.paperworkStatus}
-                    </span>
-                  </td>
-                  <td className="p-3 text-muted-foreground">{formatDate(o.createdAt)}</td>
-                  <td className="p-3 text-right">
-                    <Link href={`/admin/orders/${o.id}`} className="text-primary hover:underline">
-                      处理 →
-                    </Link>
-                  </td>
-                </tr>
-              ))
+              rows.map((o) => {
+                const discount = parseFloat(o.discountAmount ?? '0');
+                const original = parseFloat(o.originalAmount ?? o.amount);
+                const isUpgrade = discount > 0;
+                return (
+                  <tr key={o.id} className="border-b last:border-0 hover:bg-muted/30">
+                    <td className="p-3 font-mono text-xs">{o.orderNumber}</td>
+                    <td className="p-3">
+                      <div>{o.leadCompany ?? '-'}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {o.leadContact} · {o.leadEmail}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div className="font-medium">{getPlanShortLabel(o.planType)}</div>
+                      {o.upgradedFromPlan && (
+                        <div className="mt-0.5 inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                          由 {getPlanShortLabel(o.upgradedFromPlan)} 升级
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      {isUpgrade ? (
+                        <div className="text-xs leading-5">
+                          <div className="font-mono">{formatYuan(parseFloat(o.amount))}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            标价 {formatYuan(original)} - 抵扣 {formatYuan(discount)}
+                          </div>
+                        </div>
+                      ) : (
+                        formatYuan(parseFloat(o.amount))
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <div>{o.paymentStatus}</div>
+                      <div className="text-xs text-muted-foreground">{o.paymentProvider ?? '-'}</div>
+                    </td>
+                    <td className="p-3">
+                      <span className="rounded bg-muted px-2 py-0.5 text-xs">
+                        {STATUS_LABELS[o.paperworkStatus] ?? o.paperworkStatus}
+                      </span>
+                    </td>
+                    <td className="p-3 text-muted-foreground">{formatDate(o.createdAt)}</td>
+                    <td className="p-3 text-right">
+                      <Link href={`/admin/orders/${o.id}`} className="text-primary hover:underline">
+                        处理 →
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

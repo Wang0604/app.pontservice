@@ -41,14 +41,21 @@ export function buildContractVariables(params: {
     email: string;
     phone?: string | null;
   };
+  /** 升级订单的标准价（即套餐 priceCny）。首单与 amountCny 相同。 */
+  originalAmountCny?: number;
+  /** 升级订单使用的 999 抵扣金额。首单为 0。 */
+  discountAmountCny?: number;
   signDate?: Date;
 }): ContractVariables {
   const signDate = (params.signDate ?? new Date()).toISOString().slice(0, 10);
+  const fmt = (v: number) => v.toLocaleString('zh-CN', { minimumFractionDigits: 0 });
 
   return {
     orderNumber: params.orderNumber,
     signDate,
-    amount: params.amountCny.toLocaleString('zh-CN', { minimumFractionDigits: 0 }),
+    amount: fmt(params.amountCny),
+    originalAmount: fmt(params.originalAmountCny ?? params.amountCny),
+    discountAmount: fmt(params.discountAmountCny ?? 0),
     credits: params.credits,
     billingCycle: params.billingCycle,
     customer: {

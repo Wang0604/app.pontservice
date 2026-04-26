@@ -12,9 +12,15 @@ export function ActivationPanel(props: {
   orderNumber: string;
   customerEmail: string;
   customerCompany: string;
+  /** 当前订单的实付金额（升级订单 = 差额；首单 = 标价） */
   amountCny: number;
+  /** 套餐标准价（升级订单与 amountCny 不同；首单相同） */
+  originalAmountCny: number;
+  /** 升级订单的抵扣金额，首单为 0 */
+  discountAmountCny: number;
   currentStatus: string;
   receiptCount: number;
+  planLabel: string;
 }) {
   const router = useRouter();
   const [invoiceNumber, setInvoiceNumber] = useState(() => {
@@ -25,8 +31,15 @@ export function ActivationPanel(props: {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const isUpgrade = props.discountAmountCny > 0;
+  const totalForInvoice = isUpgrade ? props.amountCny + props.discountAmountCny : props.amountCny;
+
   async function handleActivate() {
-    if (!confirm(`确认激活订单 ${props.orderNumber}？\n将给 ${props.customerEmail} 发放 credits 并发送激活邮件。`))
+    if (
+      !confirm(
+        `确认激活订单 ${props.orderNumber}？\n\n• 套餐：${props.planLabel}\n• 发票金额：¥${totalForInvoice.toLocaleString()}${isUpgrade ? `（含已抵扣 ¥${props.discountAmountCny.toLocaleString()}）` : ''}\n• 将给 ${props.customerEmail} 发放 credits 并发送激活邮件`,
+      )
+    )
       return;
 
     setLoading(true);
@@ -74,17 +87,45 @@ export function ActivationPanel(props: {
         <CardTitle>对账与激活</CardTitle>
         <CardDescription>
           核对对公账户流水与客户提交的信息一致后，点激活为客户发放 credits 并开具发票。
+          {isUpgrade && (
+            <span className="mt-1 block text-xs">
+              升级订单：发票按套餐标准价开具 ¥{totalForInvoice.toLocaleString()}（含已抵扣 ¥
+              {props.discountAmountCny.toLocaleString()} 启动包）。
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label>客户</Label>
-            <div className="rounded border p-2 text-sm">{props.customerCompany} · {props.customerEmail}</div>
+            <div className="rounded border p-2 text-sm">
+              {props.customerCompany} · {props.customerEmail}
+            </div>
           </div>
           <div>
-            <Label>金额</Label>
-            <div className="rounded border p-2 text-sm">¥{props.amountCny.toLocaleString()}</div>
+            <Label>套餐</Label>
+            <div className="rounded border p-2 text-sm">{props.planLabel}</div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label>本次实收（差额）</Label>
+            <div className="rounded border p-2 font-mono text-sm">
+              ¥{props.amountCny.toLocaleString()}
+            </div>
+          </div>
+          <div>
+            <Label>开票金额（标准价）</Label>
+            <div className="rounded border p-2 font-mono text-sm">
+              ¥{totalForInvoice.toLocaleString()}
+              {isUpgrade && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  含抵扣 ¥{props.discountAmountCny.toLocaleString()}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
