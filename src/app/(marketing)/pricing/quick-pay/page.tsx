@@ -14,27 +14,27 @@ export const metadata = {
 const reasons = [
   {
     icon: <CreditCard className="h-5 w-5" />,
-    title: '微信扫码 · 当场付款',
+    title: '当场扫码 · 当场启用',
     description:
-      '提交后立刻生成订单二维码，微信扫码即可付款。付完跳到设置密码页，自动进入工作台。',
+      '提交订单后立即生成微信支付二维码；付款成功即可设置登录密码、进入工作台开始使用。',
   },
   {
     icon: <InfinityIcon className="h-5 w-5" />,
-    title: '12 个月起免 Credits',
+    title: '包年订阅 · Credits 不设上限',
     description:
-      '选 12 个月（包年）→ Credits 上限自动解除（≈ 无限）。OCR / SEO / GEO 工具想用多少用多少。',
+      '选择 12 个月订阅后，Credits 用量在订阅期内不设上限，团队可按需使用所有 AI 工具。',
   },
   {
     icon: <ReceiptText className="h-5 w-5" />,
-    title: '正规增值税发票',
+    title: '对公合同 + 增值税发票',
     description:
-      '所有付款走对公合同 + 3% 增值税普通发票，企业财务可正常报销。',
+      '所有付款均提供对公合同与 3% 增值税普通发票，企业财务可正常入账与报销。',
   },
   {
     icon: <ShieldCheck className="h-5 w-5" />,
-    title: '随时切回 999 入口',
+    title: '可切换 999 启动包路径',
     description:
-      '不想直接掏年费 → 改选 999 启动包先做诊断；后续升级时已付 999 全额抵扣首期。',
+      '想先做一次免费 1v1 诊断再决定订阅周期？也可改选 999 启动包，后续升级时金额全额抵扣首期。',
   },
 ];
 
@@ -53,32 +53,35 @@ export default async function QuickPayPage() {
           aria-hidden="true"
           className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(0,160,233,0.12),transparent_45%)]"
         />
-        <div className="container relative max-w-5xl py-16 md:py-20">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-bold text-white/65 transition hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            返回首页
-          </Link>
+        <div className="container relative max-w-5xl py-16 md:py-24">
+          <div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-bold text-white/65 transition hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              返回首页
+            </Link>
+          </div>
 
-          <span className="mt-7 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-amber-200">
-            Quick Pay · 迅速付款链接
-          </span>
-          <h1 className="mt-6 max-w-3xl text-balance text-4xl font-black leading-[1.25] md:text-6xl md:leading-[1.2]">
-            999 一次性 / 2,999 × N 月
+          <div className="mt-12">
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-amber-200">
+              Quick Pay · 迅速付款链接
+            </span>
+          </div>
+          <h1 className="mt-7 max-w-3xl text-balance text-4xl font-black leading-[1.4] md:text-6xl md:leading-[1.3]">
+            灵活选择付款周期，
             <br className="hidden md:block" />
-            选 12 个月，Credits 直接免限制。
+            立即解锁 AI 工作台。
           </h1>
-          <p className="mt-7 max-w-3xl text-pretty text-lg leading-[1.85] text-white/70 md:text-xl md:leading-[1.9]">
-            不走免费诊断 1v1 流程，直接挑套餐 → 选月数 → 微信扫码付款 → 进工作台用工具。
+          <p className="mt-8 max-w-3xl text-pretty text-lg leading-[1.95] text-white/75 md:text-xl md:leading-[2]">
+            跳过免费诊断流程，直接挑选合适的套餐与订阅周期，扫码付款后立即开通账户、进入工作台开始使用。
           </p>
-          <p className="mt-4 max-w-3xl text-pretty text-base font-semibold leading-[1.85] text-amber-100/95 md:text-lg md:leading-[1.9]">
-            重点：选「2,999 × 12」（包年）→ 自动 ≈ 10 亿 credits（话术上「免 Credits 限制」），
-            OCR / SEO / GEO 想跑多少跑多少，不再被「当月 200 credits」卡住。
+          <p className="mt-5 max-w-3xl text-pretty text-base font-semibold leading-[1.95] text-amber-100/95 md:text-lg md:leading-[2]">
+            选择 12 个月（包年）订阅，可在订阅期内不设 Credits 用量上限——团队可按需使用 OCR、SEO、GEO 等 AI 工具。
           </p>
 
-          <div className="mt-14 grid gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-16 grid gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
             {reasons.map((r) => (
               <div key={r.title} className="bg-[#070b1c]/95 p-7">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300/15 text-amber-300">
@@ -98,16 +101,16 @@ export default async function QuickPayPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
               Checkout
             </p>
-            <h2 className="mt-4 text-3xl font-black leading-[1.3] md:text-4xl md:leading-[1.25]">
-              选套餐 → 选月数 → 微信扫码付款
+            <h2 className="mt-5 text-3xl font-black leading-[1.4] md:text-4xl md:leading-[1.35]">
+              三步完成付款
             </h2>
-            <p className="mt-4 text-sm leading-[1.85] text-slate-600 md:text-base md:leading-[1.9]">
+            <p className="mt-5 text-sm leading-[1.95] text-slate-600 md:text-base md:leading-[2]">
               {user
                 ? `已用 ${user.email} 登录，下方信息会自动预填，付款完成即直接激活当前账户。`
-                : '提交后立刻生成微信扫码二维码，付款成功后在同一个页面设置登录密码，自动进入工作台。'}
+                : '选择适合的套餐与订阅周期，扫码付款成功后即可设置登录密码，自动进入工作台开始使用。'}
             </p>
 
-            <div className="mt-9">
+            <div className="mt-10">
               <QuickPayForm
                 prefill={
                   user
@@ -125,12 +128,24 @@ export default async function QuickPayPage() {
             </div>
           </div>
 
-          <div className="mt-7 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-5 text-xs leading-[1.85] text-slate-600 md:text-sm">
-            <span className="font-bold text-slate-900">为什么有「迅速付款链接」？</span>
-            <br />
-            原本 <Link href="/pricing/apply" className="underline hover:text-slate-900">/pricing/apply</Link> 走的是 999 启动包 → 免费诊断 → 后续升级抵扣这条 lead 链路；
-            「迅速付款链接」适合：客户已经聊好了 / 老客户 / 种子客户 / 直接掏年费的——一步到位扫码付完进系统。
-            两条路径的金额、合同、发票口径都一样。
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white/80 p-6 text-xs leading-[1.95] text-slate-600 md:text-sm md:leading-[2]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
+              另一条路径
+            </p>
+            <p className="mt-3 text-sm font-bold text-slate-900 md:text-base">
+              想先做免费 1v1 诊断？前往 999 启动包预约页。
+            </p>
+            <p className="mt-3">
+              999 启动包包含一次 40-60 分钟资深顾问 1v1 诊断、《AI 落地路线图》PDF
+              报告与 50 credits 工具体验；后续升级到 2,999 工具包或 9,999 增长包时，999 元全额抵扣首期。
+              两条路径在合同与发票口径上完全一致。
+            </p>
+            <Link
+              href="/pricing/apply"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-slate-900 underline-offset-4 hover:underline"
+            >
+              前往预约 999 启动包 →
+            </Link>
           </div>
         </div>
       </section>

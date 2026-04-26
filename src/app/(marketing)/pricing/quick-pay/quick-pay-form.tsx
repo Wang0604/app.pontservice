@@ -103,18 +103,18 @@ export function QuickPayForm({ prefill }: { prefill?: Prefill }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-7">
-      <div className="space-y-3">
-        <Label className="text-base font-bold leading-[1.6] text-slate-900">
+      <div className="space-y-4">
+        <Label className="text-base font-bold leading-[1.7] text-slate-900">
           1. 选择套餐
         </Label>
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <PlanCard
             checked={planType === '999'}
             onClick={() => setPlanType('999')}
             title="999 启动包"
-            tagline="一次性 · 获客入口"
+            tagline="一次性付费"
             price={`¥${ENTRY_PRICE.toLocaleString()}`}
-            note="50 credits + 免费 1v1 诊断 · 后续升级时全额抵扣"
+            note="含 40-60 分钟免费 1v1 诊断、《AI 落地路线图》PDF 与 50 credits 工具体验。后续升级时金额全额抵扣首期。"
             disabled={submitting}
             accent="sky"
           />
@@ -122,9 +122,9 @@ export function QuickPayForm({ prefill }: { prefill?: Prefill }) {
             checked={planType === '2999'}
             onClick={() => setPlanType('2999')}
             title="2999 工具包"
-            tagline="按月订阅 · 可选 1–12 月"
+            tagline="按月订阅"
             price={`¥${MONTHLY_PRICE.toLocaleString()} / 月`}
-            note="完整 OCR / SEO / GEO 工具 · 选 12 个月免 Credits 限制"
+            note="完整 AI 工具矩阵：OCR 发票识别、SEO 诊断、GEO 诊断。选择 12 个月（包年）后，Credits 用量在订阅期内不设上限。"
             disabled={submitting}
             accent="amber"
           />
@@ -132,12 +132,12 @@ export function QuickPayForm({ prefill }: { prefill?: Prefill }) {
       </div>
 
       {planType === '2999' && (
-        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-500">
-          <Label className="text-base font-bold leading-[1.6] text-slate-900">
-            2. 选择购买月数
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+          <Label className="text-base font-bold leading-[1.7] text-slate-900">
+            2. 选择订阅周期
           </Label>
-          <p className="text-sm leading-[1.85] text-slate-500">
-            选 12 个月（包年）→ Credits 自动免限制（≈ 无限）。少于 12 个月按 ¥{MONTHLY_PRICE.toLocaleString()} / 月计费。
+          <p className="text-sm leading-[1.95] text-slate-500">
+            1–11 个月按 ¥{MONTHLY_PRICE.toLocaleString()} / 月计费；选择 12 个月（包年）订阅期内 Credits 用量不设上限。
           </p>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
             {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
@@ -179,54 +179,57 @@ export function QuickPayForm({ prefill }: { prefill?: Prefill }) {
       <div
         className={
           isYearly
-            ? 'rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-white p-5'
-            : 'rounded-2xl border-2 border-slate-200 bg-slate-50/60 p-5'
+            ? 'rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-white p-6'
+            : 'rounded-2xl border-2 border-slate-200 bg-slate-50/60 p-6'
         }
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+            <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
               本次实付
             </div>
-            <div className="mt-1 flex items-baseline gap-1.5">
+            <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-4xl font-black tracking-tight text-slate-900">
                 ¥{totalAmount.toLocaleString()}
               </span>
               {planType === '2999' && (
                 <span className="text-sm font-semibold text-slate-500">
-                  （{MONTHLY_PRICE.toLocaleString()} × {monthCount}）
+                  （¥{MONTHLY_PRICE.toLocaleString()} × {monthCount} 个月）
                 </span>
               )}
             </div>
             {planType === '999' && (
-              <div className="mt-2 text-xs leading-[1.85] text-slate-600">
-                付完进 999 启动包流程：50 credits + 免费 1v1 诊断 + AI 工具抵扣券。后续升级月付 / 包年时 999 全额抵扣首期。
-              </div>
+              <p className="mt-3 text-xs leading-[1.95] text-slate-600">
+                含一次免费 1v1 诊断 + 50 credits 工具体验；后续升级到 2,999 工具包或 9,999
+                增长包时，999 元全额抵扣首期。
+              </p>
             )}
             {planType === '2999' && !isYearly && (
-              <div className="mt-2 text-xs leading-[1.85] text-slate-600">
-                {monthCount} 个月 × {MONTHLY_PRICE.toLocaleString()} 元 / 月 · 每月 200 credits（不累计）。建议选 12 个月（包年）→ 自动免 Credits 限制。
-              </div>
+              <p className="mt-3 text-xs leading-[1.95] text-slate-600">
+                按月订阅 {monthCount} 个月，每月含 200 credits 配额（不结转）。如希望 Credits
+                用量不设上限，可选择 12 个月（包年）订阅。
+              </p>
             )}
           </div>
           {isYearly && (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-amber-950 shadow-sm">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-amber-950 shadow-sm">
               <Sparkles className="h-3 w-3" />
-              免 Credits 限制
+              Credits 不设上限
             </span>
           )}
         </div>
         {isYearly && (
-          <div className="mt-3 rounded-lg border border-amber-200 bg-white/70 p-3 text-xs leading-[1.85] text-amber-900">
-            <strong>包年特权：</strong>选 12 个月 → 激活后 credits 上限解除（按 ≈ 10 亿发放，相当于
-            无限）。OCR / SEO / GEO 工具用到爽，不再被「当月 200 credits」卡脖子。
+          <div className="mt-4 rounded-xl border border-amber-200/80 bg-white/70 p-4 text-xs leading-[1.95] text-amber-900 md:text-sm md:leading-[2]">
+            <span className="font-bold">包年订阅特权 · </span>
+            订单激活后，Credits 用量在订阅期内不设上限，团队可按需使用 OCR、SEO、GEO 等所有 AI
+            工具，无月度配额顾虑。
           </div>
         )}
       </div>
 
-      <div className="space-y-5 border-t border-slate-200 pt-7">
-        <Label className="text-base font-bold leading-[1.6] text-slate-900">
-          3. 填客户信息
+      <div className="space-y-6 border-t border-slate-200 pt-8">
+        <Label className="text-base font-bold leading-[1.7] text-slate-900">
+          3. 填写企业与联系人信息
         </Label>
         <div className="space-y-2">
           <Label htmlFor="companyName">
@@ -313,7 +316,7 @@ export function QuickPayForm({ prefill }: { prefill?: Prefill }) {
         </div>
       )}
 
-      <div className="border-t border-slate-200 pt-7">
+      <div className="border-t border-slate-200 pt-8">
         <Button
           type="submit"
           disabled={submitting}
@@ -328,8 +331,8 @@ export function QuickPayForm({ prefill }: { prefill?: Prefill }) {
             </>
           )}
         </Button>
-        <p className="mt-3 text-xs leading-[1.85] text-slate-500">
-          点击后立刻生成微信扫码二维码，付款成功跳到设置密码页 → 自动进入工作台。
+        <p className="mt-4 text-xs leading-[1.95] text-slate-500">
+          点击后立即生成微信支付二维码；付款成功后会引导您设置登录密码，并自动进入工作台。
         </p>
       </div>
     </form>
@@ -401,7 +404,7 @@ function PlanCard({
       {accent === 'amber' && !checked && (
         <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">
           <Zap className="h-3 w-3" />
-          12 个月起免 Credits 限制
+          12 个月起 Credits 不设上限
         </div>
       )}
     </button>
